@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 const WA_LINK = "https://wa.me/5566999298666?text=Ol%C3%A1%2C%20vim%20pelo%20site%20e%20gostaria%20de%20solicitar%20um%20or%C3%A7amento!";
 const WA_SERVICO = (servico) =>
   `https://wa.me/5566999298666?text=Ol%C3%A1%2C%20tenho%20interesse%20em%20${encodeURIComponent(servico)}.%20Pode%20me%20ajudar%3F`;
@@ -9,33 +11,53 @@ const marcas = [
 ];
 
 export default function App() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
     <div className="overflow-x-hidden bg-[#0D0D0D] text-[#e2e2e2] font-inter">
 
       {/* ── TopNavBar ── */}
-      <nav className="fixed top-0 left-0 w-full grid grid-cols-3 items-center px-8 py-2 bg-[#0D0D0D]/90 backdrop-blur-xl border-b border-white/10 shadow-[0_0_15px_rgba(59,130,246,0.1)] z-50">
-        {/* Logo - coluna esquerda */}
-        <a href="#" className="ml-8">
-          <img src="/logo.png" alt="RG TECH Logo" className="h-28 w-auto object-contain" />
-        </a>
+      <nav className="fixed top-0 left-0 w-full px-4 md:px-8 py-2 bg-[#0D0D0D]/90 backdrop-blur-xl border-b border-white/10 shadow-[0_0_15px_rgba(59,130,246,0.1)] z-50">
+        <div className="flex justify-between items-center h-full">
+          {/* Logo */}
+          <a href="#" className="shrink-0">
+            <img src="/logo.png" alt="RG TECH Logo" className="h-16 md:h-24 w-auto object-contain" />
+          </a>
 
-        {/* Links - coluna central (centralizado) */}
-        <div className="hidden md:flex gap-8 items-center justify-center">
-          <a className="text-blue-400 font-bold border-b-2 border-blue-500 tracking-tight hover:text-blue-400 transition-colors duration-300 uppercase text-sm" href="#servicos">SERVIÇOS</a>
-          <a className="text-slate-400 font-medium tracking-tight hover:text-blue-400 transition-colors duration-300 uppercase text-sm" href="#marcas">MARCAS</a>
-          <a className="text-slate-400 font-medium tracking-tight hover:text-blue-400 transition-colors duration-300 uppercase text-sm" href="#sobre">SOBRE NÓS</a>
-          <a className="text-slate-400 font-medium tracking-tight hover:text-blue-400 transition-colors duration-300 uppercase text-sm" href="#faq">FAQ</a>
+          {/* Links - Desktop */}
+          <div className="hidden md:flex gap-8 items-center justify-center">
+            <a className="text-blue-400 font-bold border-b-2 border-blue-500 tracking-tight hover:text-blue-400 transition-colors duration-300 uppercase text-sm" href="#servicos">SERVIÇOS</a>
+            <a className="text-slate-400 font-medium tracking-tight hover:text-blue-400 transition-colors duration-300 uppercase text-sm" href="#marcas">MARCAS</a>
+            <a className="text-slate-400 font-medium tracking-tight hover:text-blue-400 transition-colors duration-300 uppercase text-sm" href="#sobre">SOBRE NÓS</a>
+            <a className="text-slate-400 font-medium tracking-tight hover:text-blue-400 transition-colors duration-300 uppercase text-sm" href="#faq">FAQ</a>
+          </div>
+
+          {/* CTA buttons & Mobile Menu Toggle */}
+          <div className="flex gap-3 md:gap-4 items-center shrink-0">
+            <a href={WA_LINK} target="_blank" rel="noreferrer" className="hidden lg:block px-5 py-2 text-slate-400 font-medium hover:text-white transition-all text-sm whitespace-nowrap">
+              📞 (66) 9 9929-8666
+            </a>
+            <a href={WA_LINK} target="_blank" rel="noreferrer" className="px-4 py-2 bg-[#2D2B7A] text-white font-bold rounded-lg hover:bg-[#4A47FF] transition-all text-xs md:text-sm whitespace-nowrap">
+              ORÇAMENTO
+            </a>
+            <button 
+              className="md:hidden text-white p-2" 
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <span className="material-symbols-outlined text-2xl">{isMenuOpen ? "close" : "menu"}</span>
+            </button>
+          </div>
         </div>
 
-        {/* CTA buttons - coluna direita */}
-        <div className="flex gap-4 items-center justify-end">
-          <a href={WA_LINK} target="_blank" rel="noreferrer" className="px-5 py-2 text-slate-400 font-medium hover:text-white transition-all text-sm">
-            📞 (66) 9 9929-8666
-          </a>
-          <a href={WA_LINK} target="_blank" rel="noreferrer" className="px-6 py-2 bg-[#2D2B7A] text-white font-bold rounded-lg hover:bg-[#4A47FF] transition-all text-sm">
-            ORÇAMENTO
-          </a>
-        </div>
+        {/* Mobile Menu Dropdown */}
+        {isMenuOpen && (
+          <div className="md:hidden absolute top-full left-0 w-full bg-[#0D0D0D] border-b border-white/10 py-4 px-6 flex flex-col gap-4 shadow-xl">
+            <a className="text-white font-bold uppercase text-sm" href="#servicos" onClick={() => setIsMenuOpen(false)}>SERVIÇOS</a>
+            <a className="text-slate-400 hover:text-white font-medium uppercase text-sm" href="#marcas" onClick={() => setIsMenuOpen(false)}>MARCAS</a>
+            <a className="text-slate-400 hover:text-white font-medium uppercase text-sm" href="#sobre" onClick={() => setIsMenuOpen(false)}>SOBRE NÓS</a>
+            <a className="text-slate-400 hover:text-white font-medium uppercase text-sm" href="#faq" onClick={() => setIsMenuOpen(false)}>FAQ</a>
+          </div>
+        )}
       </nav>
 
       {/* ── Hero Section ── */}
@@ -196,6 +218,18 @@ export default function App() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* CTA Instagram */}
+          <div className="mt-16 text-center">
+            <p className="text-slate-400 text-sm mb-4">Quer ver nossos resultados na prática?</p>
+            <a href="https://www.instagram.com/rgtechpc/" target="_blank" rel="noreferrer"
+              className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white font-bold rounded-xl hover:scale-105 transition-all shadow-lg shadow-pink-900/20">
+              <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+              </svg>
+              Veja alguns de nossos Trabalhos
+            </a>
           </div>
         </div>
       </section>
