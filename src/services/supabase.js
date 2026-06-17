@@ -494,5 +494,21 @@ export const db = {
 
       await db.financeiro.insert(novoLancamento);
     }
+  },
+  // ── Itens do Orçamento ──
+  orcamento_itens: {
+    list: async () => {
+      if (isOffline()) {
+        return { data: localDB.get("orcamento_itens"), error: null };
+      }
+      try {
+        const { data, error } = await supabase.from('orcamento_itens').select('*');
+        if (error) throw error;
+        return { data, error: null };
+      } catch (err) {
+        console.warn("Supabase erro, caindo para local storage:", err);
+        return { data: localDB.get("orcamento_itens"), error: null };
+      }
+    }
   }
 };

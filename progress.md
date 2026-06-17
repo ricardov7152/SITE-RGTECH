@@ -27,3 +27,12 @@
     * [Financeiro.jsx](file:///C:/Projetos%20Antigravity/Jarvis/SITE-RGTECH/src/pages/admin/Financeiro.jsx) (Fluxo de caixa manual e conciliação bancária/splits de pagamento misto).
 * **Compilação e Verificação (Fase 4 & 5):**
   * Executado `npm run build` com sucesso, provando que não há erros de compilação ou importação.
+
+### 2026-06-17
+* **Dashboard Avançado:**
+  * Adicionado endpoint de listagem global de itens de orçamentos no [supabase.js](file:///C:/Projetos%20Antigravity/Jarvis/SITE-RGTECH/src/services/supabase.js).
+  * Implementadas as métricas de **Receita Total**, **Ticket Médio**, e **Crescimento Mensal (%)** comparado ao mês anterior.
+  * Implementada a separação de faturamento de **Peças (Produtos)** vs **Serviços**, agrupados dinamicamente.
+  * Criado um gráfico de barras mensal estilizado inteiramente com Tailwind CSS v4 no [Dashboard.jsx](file:///C:/Projetos%20Antigravity/Jarvis/SITE-RGTECH/src/pages/admin/Dashboard.jsx).
+  * Executado `npm run build` com sucesso para validar a compilação.
+

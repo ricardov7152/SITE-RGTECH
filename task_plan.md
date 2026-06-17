@@ -48,3 +48,12 @@
 ### 🔴 Fase 5: Gatilho & Deploy (G)
 - [x] Executar compilação de produção (`npm run build`) para verificar erros de build.
 - [ ] Subir as alterações no repositório GitHub.
+
+---
+
+## ⚪ Backlog & Melhorias Futuras (Dashboard Avançado)
+- [x] **Novas Métricas do Dashboard Interativo:**
+  - [x] **Ticket Médio:** Cálculo do ticket médio de orçamentos faturados e lançamentos manuais.
+  - [x] **Divisão de Vendas:** Totalizar separadamente vendas de produtos (peças) vs. serviços, segmentados por mês e ano.
+  - [x] **Gráfico de Receitas Mensal:** Exibição mensal das receitas.
+  - [x] **Métrica de Crescimento:** Mostrar o percentual (%) de crescimento mensal comparado ao mês anterior.
