@@ -165,10 +165,10 @@ export default function Dashboard() {
     .reduce((sum, f) => sum + Number(f.valor), 0);
 
   let crescimentoPercentual = 0;
+  let temComparativo = false;
   if (receitaMesAnterior > 0) {
     crescimentoPercentual = ((receitaMesAtual - receitaMesAnterior) / receitaMesAnterior) * 100;
-  } else if (receitaMesAtual > 0) {
-    crescimentoPercentual = 100;
+    temComparativo = true;
   }
 
   // --- RANKING DE CLIENTES ---
@@ -267,17 +267,28 @@ export default function Dashboard() {
         <div className="glass p-6 rounded-2xl shadow-xl flex items-center justify-between relative overflow-hidden">
           <div className="space-y-1">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Crescimento Mensal</span>
-            <span className={`text-2xl font-bold block ${crescimentoPercentual >= 0 ? "text-emerald-400" : "text-rose-500"}`}>
-              {crescimentoPercentual >= 0 ? "+" : ""}{crescimentoPercentual.toFixed(1)}%
-            </span>
-            <span className="text-xs text-slate-500 block">Este mês vs. mês anterior</span>
+            {temComparativo ? (
+              <>
+                <span className={`text-2xl font-bold block ${crescimentoPercentual >= 0 ? "text-emerald-400" : "text-rose-500"}`}>
+                  {crescimentoPercentual >= 0 ? "+" : ""}{crescimentoPercentual.toFixed(1)}%
+                </span>
+                <span className="text-xs text-slate-500 block">Este mês vs. mês anterior</span>
+              </>
+            ) : (
+              <>
+                <span className="text-lg font-bold text-slate-300 block py-1">Sem comparativo</span>
+                <span className="text-xs text-slate-500 block">Primeiro mês de operação</span>
+              </>
+            )}
           </div>
           <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
-            crescimentoPercentual >= 0 ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
+            !temComparativo ? "bg-slate-500/10 text-slate-400" : (crescimentoPercentual >= 0 ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400")
           }`}>
             <Percent size={22} />
           </div>
-          <div className={`absolute bottom-0 left-0 w-full h-1 ${crescimentoPercentual >= 0 ? "bg-emerald-500/30" : "bg-rose-500/30"}`}></div>
+          <div className={`absolute bottom-0 left-0 w-full h-1 ${
+            !temComparativo ? "bg-slate-500/30" : (crescimentoPercentual >= 0 ? "bg-emerald-500/30" : "bg-rose-500/30")
+          }`}></div>
         </div>
       </div>
 
