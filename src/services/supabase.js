@@ -322,13 +322,13 @@ export const db = {
         return { data: { ...newOrc, itens: newItens }, error: null };
       }
     },
-    updateStatus: async (id, status) => {
+    updateStatus: async (id, status, motivo_recusa = null) => {
       if (isOffline()) {
         const orcamentos = localDB.get("orcamentos");
         let updatedOrc = null;
         const updated = orcamentos.map(o => {
           if (o.id === id) {
-            updatedOrc = { ...o, status };
+            updatedOrc = { ...o, status, motivo_recusa: status === "Recusado" ? motivo_recusa : null };
             return updatedOrc;
           }
           return o;
@@ -342,7 +342,8 @@ export const db = {
         return { error: null };
       }
       try {
-        const { error } = await supabase.from('orcamentos').update({ status }).eq('id', id);
+        const payload = { status, motivo_recusa: status === "Recusado" ? motivo_recusa : null };
+        const { error } = await supabase.from('orcamentos').update(payload).eq('id', id);
         if (error) throw error;
 
         if (status === "Aprovado") {
@@ -358,7 +359,7 @@ export const db = {
         let updatedOrc = null;
         const updated = orcamentos.map(o => {
           if (o.id === id) {
-            updatedOrc = { ...o, status };
+            updatedOrc = { ...o, status, motivo_recusa: status === "Recusado" ? motivo_recusa : null };
             return updatedOrc;
           }
           return o;

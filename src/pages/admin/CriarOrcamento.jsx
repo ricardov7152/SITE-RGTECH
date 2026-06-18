@@ -21,6 +21,7 @@ export default function CriarOrcamento() {
   const [itens, setItens] = useState([]);
   const [desconto, setDesconto] = useState(0);
   const [status, setStatus] = useState("Em aberto");
+  const [motivoRecusa, setMotivoRecusa] = useState("");
   const [condicoes, setCondicoes] = useState({
     validade_dias: 7,
     prazo_entrega: "3 a 5 dias úteis",
@@ -58,6 +59,7 @@ export default function CriarOrcamento() {
             setItens(orc.itens || []);
             setDesconto(Number(orc.desconto || 0));
             setStatus(orc.status || "Em aberto");
+            setMotivoRecusa(orc.motivo_recusa || "");
             setDataEmissao(orc.data_emissao || new Date().toISOString().split("T")[0]);
             setCondicoes({
               validade_dias: orc.validade_dias || 7,
@@ -158,6 +160,7 @@ export default function CriarOrcamento() {
       desconto: Number(desconto),
       total: totalFinal,
       status,
+      motivo_recusa: status === "Recusado" ? motivoRecusa : null,
       data_emissao: dataEmissao,
       validade_dias: Number(condicoes.validade_dias),
       prazo_entrega: condicoes.prazo_entrega,
@@ -472,6 +475,40 @@ export default function CriarOrcamento() {
           {/* Condições e Prazos */}
           <div className="glass p-6 rounded-2xl shadow-xl space-y-4">
             <h3 className="font-bold text-white text-base border-b border-white/5 pb-2">Condições Comerciais</h3>
+            
+            {/* Status e Motivo de Recusa */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-2 border-b border-white/5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Status do Orçamento *</label>
+                <select 
+                  className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF]"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option value="Em aberto">Em aberto</option>
+                  <option value="Aprovado">Aprovado</option>
+                  <option value="Recusado">Recusado</option>
+                  <option value="Concluído">Concluído</option>
+                </select>
+              </div>
+              {status === "Recusado" ? (
+                <div className="animate-fadeIn">
+                  <label className="block text-xs font-semibold text-rose-400 mb-1">Motivo da Recusa (Opcional)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ex: Achou o valor das peças alto"
+                    className="w-full bg-white/5 border border-red-500/30 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500"
+                    value={motivoRecusa}
+                    onChange={(e) => setMotivoRecusa(e.target.value)}
+                  />
+                </div>
+              ) : (
+                <div className="text-xs text-slate-500 flex items-center pt-6">
+                  Modifique para "Recusado" para detalhar o motivo.
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Validade do Orçamento (Dias)</label>

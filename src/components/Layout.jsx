@@ -8,7 +8,8 @@ import {
   Package, 
   LogOut, 
   Menu, 
-  X 
+  X,
+  Settings
 } from "lucide-react";
 import { supabase } from "../services/supabase";
 
@@ -34,6 +35,7 @@ export default function Layout() {
     { to: "/admin/clientes", label: "Clientes", icon: Users },
     { to: "/admin/financeiro", label: "Financeiro", icon: TrendingUp },
     { to: "/admin/produtos", label: "Produtos & Peças", icon: Package },
+    { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
   ];
 
   return (

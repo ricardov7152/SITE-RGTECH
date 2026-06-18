@@ -384,6 +384,7 @@ export default function Clientes() {
                     <option value="Google">Google</option>
                     <option value="Instagram">Instagram</option>
                     <option value="Site">Site</option>
+                    <option value="WhatsApp">WhatsApp</option>
                     <option value="Indicação">Indicação</option>
                     <option value="Outros">Outros</option>
                   </select>

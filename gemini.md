@@ -30,7 +30,7 @@ CREATE TABLE public.clientes (
     telefone TEXT,
     email TEXT,
     endereco TEXT,
-    origem TEXT CHECK (origem IN ('Indicação', 'Google', 'Instagram', 'Site', 'Outros')),
+    origem TEXT CHECK (origem IN ('Indicação', 'Google', 'Instagram', 'Site', 'WhatsApp', 'Outros')),
     
     -- Exclusivos para Pessoa Jurídica (PJ)
     nome_fantasia TEXT,

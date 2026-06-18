@@ -11,6 +11,7 @@ import Produtos from "./pages/admin/Produtos";
 import Orcamentos from "./pages/admin/Orcamentos";
 import CriarOrcamento from "./pages/admin/CriarOrcamento";
 import Financeiro from "./pages/admin/Financeiro";
+import Configuracoes from "./pages/admin/Configuracoes";
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="clientes" element={<Clientes />} />
           <Route path="financeiro" element={<Financeiro />} />
           <Route path="produtos" element={<Produtos />} />
+          <Route path="configuracoes" element={<Configuracoes />} />
         </Route>
 
         {/* Rota de Fallback */}

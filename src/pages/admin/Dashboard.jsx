@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { db } from "../../services/supabase";
 import { 
   TrendingUp, 
@@ -11,15 +12,36 @@ import {
   ShoppingBag,
   Wrench,
   Percent,
-  Calendar
+  Calendar,
+  Target,
+  Edit2,
+  Check,
+  MessageSquare,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  FileText
 } from "lucide-react";
+import { format } from "date-fns";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [financeiro, setFinanceiro] = useState([]);
   const [orcamentos, setOrcamentos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [itensDeOrcamento, setItensDeOrcamento] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Configurações
+  const [configs, setConfigs] = useState({
+    metas: {},
+    dias_alerta_followup: 3,
+  });
+  const [isEditingMeta, setIsEditingMeta] = useState(false);
+  const [tempMeta, setTempMeta] = useState(5000);
+
+  const currentMonthKey = new Date().toISOString().substring(0, 7);
+  const metaFaturamento = configs.metas[currentMonthKey] || 5000;
 
   useEffect(() => {
     async function loadData() {
@@ -33,6 +55,22 @@ export default function Dashboard() {
         setOrcamentos(orcData || []);
         setClientes(cliData || []);
         setItensDeOrcamento(itemsData || []);
+
+        const stored = localStorage.getItem("rg_local_configuracoes");
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            const loadedConfigs = {
+              metas: parsed.metas || {},
+              dias_alerta_followup: parsed.dias_alerta_followup !== undefined ? parsed.dias_alerta_followup : 3,
+            };
+            setConfigs(loadedConfigs);
+            const cmKey = new Date().toISOString().substring(0, 7);
+            setTempMeta(loadedConfigs.metas[cmKey] || 5000);
+          } catch (e) {
+            console.error(e);
+          }
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -41,6 +79,26 @@ export default function Dashboard() {
     }
     loadData();
   }, []);
+
+  const handleSaveMeta = () => {
+    const value = Number(tempMeta);
+    if (isNaN(value) || value <= 0) {
+      alert("Por favor, insira um valor válido para a meta.");
+      return;
+    }
+    const cmKey = new Date().toISOString().substring(0, 7);
+    const newConfigs = {
+      ...configs,
+      metas: {
+        ...configs.metas,
+        [cmKey]: value
+      }
+    };
+    setConfigs(newConfigs);
+    localStorage.setItem("rg_local_configuracoes", JSON.stringify(newConfigs));
+    localStorage.setItem("rg_local_meta_faturamento", value);
+    setIsEditingMeta(false);
+  };
 
   if (loading) {
     return (
@@ -66,22 +124,57 @@ export default function Dashboard() {
     .filter(f => f.tipo === "Despesa" && f.status === "Pago")
     .reduce((acc, curr) => acc + Number(curr.valor), 0);
 
-  const saldoLiquido = receitasRecebidas - despesasPagas;
-
   // --- TICKET MÉDIO ---
-  // Baseado na Receita Realizada (Compensada) dividida pelo total de orçamentos/vendas pagas correspondentes
   const totalVendasPagas = financeiro.filter(f => f.tipo === "Receita" && f.status === "Pago").length;
   const ticketMedio = totalVendasPagas > 0 ? receitasRecebidas / totalVendasPagas : 0;
+
+  // --- PROGRESSO DA META ---
+  const percentMeta = Math.min(100, Math.round((receitasRecebidas / metaFaturamento) * 100));
+
+  // --- CLASSIFICAÇÃO E CONTAGEM DE ORÇAMENTOS ---
+  const hoje = new Date();
+  let aprovadosCount = 0;
+  let recusadosCount = 0;
+  let concluidosCount = 0;
+  let pendentesCount = 0; // Em aberto (dentro da validade)
+  let vencidosCount = 0;   // Em aberto (vencidos)
+
+  orcamentos.forEach(o => {
+    if (o.status === "Aprovado") aprovadosCount++;
+    else if (o.status === "Recusado") recusadosCount++;
+    else if (o.status === "Concluído") concluidosCount++;
+    else if (o.status === "Em aberto") {
+      const dataEmissao = new Date(o.data_emissao + "T00:00:00");
+      const validadeDias = o.validade_dias || 7;
+      const dataVencimento = new Date(dataEmissao);
+      dataVencimento.setDate(dataVencimento.getDate() + validadeDias);
+
+      if (hoje > dataVencimento) {
+        vencidosCount++;
+      } else {
+        pendentesCount++;
+      }
+    }
+  });
+
+  const totalOrcamentos = orcamentos.length;
+  const taxaConversao = totalOrcamentos > 0 ? ((aprovadosCount + concluidosCount) / totalOrcamentos) * 100 : 0;
+
+  // --- ALERTA: ORÇAMENTOS SEM RESPOSTA HÁ X DIAS ---
+  const alertasOrcamentos = orcamentos.filter(o => {
+    if (o.status !== "Em aberto") return false;
+    const dataEmissao = new Date(o.data_emissao + "T00:00:00");
+    const diffTime = Math.abs(hoje - dataEmissao);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= configs.dias_alerta_followup;
+  });
 
   // --- VENDAS DE PRODUTOS E SERVIÇOS ---
   let totalVendasProdutos = 0;
   let totalVendasServicos = 0;
-  const vendasMensaisProdServ = {};
-  const vendasAnuaisProdServ = {};
-
+  
   itensDeOrcamento.forEach(item => {
     const parentOrc = orcamentos.find(o => o.id === item.orcamento_id);
-    // Considerar apenas itens de orçamentos aprovados ou concluídos
     if (parentOrc && (parentOrc.status === "Aprovado" || parentOrc.status === "Concluído")) {
       const valor = Number(item.total || 0);
       const isPeca = item.tipo === "Peça";
@@ -91,23 +184,6 @@ export default function Dashboard() {
       } else {
         totalVendasServicos += valor;
       }
-
-      const data = parentOrc.data_emissao; // YYYY-MM-DD
-      if (data) {
-        const anoMes = data.substring(0, 7); // YYYY-MM
-        const ano = data.substring(0, 4); // YYYY
-
-        if (!vendasMensaisProdServ[anoMes]) vendasMensaisProdServ[anoMes] = { produtos: 0, servicos: 0 };
-        if (!vendasAnuaisProdServ[ano]) vendasAnuaisProdServ[ano] = { produtos: 0, servicos: 0 };
-
-        if (isPeca) {
-          vendasMensaisProdServ[anoMes].produtos += valor;
-          vendasAnuaisProdServ[ano].produtos += valor;
-        } else {
-          vendasMensaisProdServ[anoMes].servicos += valor;
-          vendasAnuaisProdServ[ano].servicos += valor;
-        }
-      }
     }
   });
 
@@ -116,7 +192,6 @@ export default function Dashboard() {
   const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
   const anoAtual = new Date().getFullYear();
 
-  // Inicializar todos os meses do ano atual com valor zero
   mesesNomes.forEach((_, idx) => {
     const mesStr = String(idx + 1).padStart(2, "0");
     receitasPorMes[`${anoAtual}-${mesStr}`] = 0;
@@ -126,7 +201,7 @@ export default function Dashboard() {
     .filter(f => f.tipo === "Receita" && f.status === "Pago" && (f.data_pagamento || f.data_vencimento))
     .forEach(f => {
       const data = f.data_pagamento || f.data_vencimento;
-      const anoMes = data.substring(0, 7); // YYYY-MM
+      const anoMes = data.substring(0, 7);
       if (receitasPorMes[anoMes] !== undefined) {
         receitasPorMes[anoMes] += Number(f.valor);
       }
@@ -146,7 +221,6 @@ export default function Dashboard() {
   const maxReceitaMes = Math.max(...chartDataReceitas.map(d => d.valor), 1);
 
   // --- CRESCIMENTO MENSAL (%) ---
-  const hoje = new Date();
   const mesAtualStr = String(hoje.getMonth() + 1).padStart(2, "0");
   const anoAtualStr = String(hoje.getFullYear());
   const chaveMesAtual = `${anoAtualStr}-${mesAtualStr}`;
@@ -199,7 +273,7 @@ export default function Dashboard() {
     .slice(0, 5);
 
   // --- ORIGENS DE CLIENTES (CRM) ---
-  const leadSource = { "Google": 0, "Instagram": 0, "Site": 0, "Indicação": 0, "Outros": 0 };
+  const leadSource = { "Google": 0, "Instagram": 0, "Site": 0, "WhatsApp": 0, "Indicação": 0, "Outros": 0 };
   clientes.forEach(c => {
     if (c.origem && leadSource[c.origem] !== undefined) {
       leadSource[c.origem]++;
@@ -214,6 +288,19 @@ export default function Dashboard() {
     percent: clientes.length > 0 ? Math.round((count / clientes.length) * 100) : 0
   })).sort((a, b) => b.count - a.count);
 
+  const handleWhatsAppAlert = (orc) => {
+    const client = clientes.find(c => c.id === orc.cliente_id);
+    if (!client || !client.telefone) {
+      alert("Cliente sem telefone cadastrado!");
+      return;
+    }
+    const cleanPhone = client.telefone.replace(/\D/g, "");
+    const msg = `Olá, ${client.nome_completo}! Aqui é o técnico da *RG TECH Computadores*.\n\n` +
+                `Gostaria de dar um retorno sobre o orçamento *#${orc.id}* enviado para o seu *${orc.eqp_tipo || "equipamento"}*.\n` +
+                `Ficou com alguma dúvida ou gostaria de aprovar o início do reparo?`;
+    window.open(`https://api.whatsapp.com/send?phone=55${cleanPhone}&text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Top Header */}
@@ -224,7 +311,7 @@ export default function Dashboard() {
 
       {/* ── KPIs Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Faturamento Pago / Recebido */}
+        {/* Faturamento Pago / Realizado */}
         <div className="glass p-6 rounded-2xl shadow-xl flex items-center justify-between relative overflow-hidden group">
           <div className="space-y-1">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Faturamento Realizado</span>
@@ -237,17 +324,52 @@ export default function Dashboard() {
           <div className="absolute bottom-0 left-0 w-full h-1 bg-emerald-500/30"></div>
         </div>
 
-        {/* Receita Total (Pago + A Conferir) */}
-        <div className="glass p-6 rounded-2xl shadow-xl flex items-center justify-between relative overflow-hidden">
-          <div className="space-y-1">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Receita Total Projetada</span>
-            <span className="text-2xl font-bold text-[#c2c1ff] block">R$ {receitaTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
-            <span className="text-xs text-slate-500 block">Pago: R$ {receitasRecebidas.toFixed(0)} | Pendente: R$ {receitasPendentes.toFixed(0)}</span>
+        {/* Meta de Faturamento do Mês */}
+        <div className="glass p-6 rounded-2xl shadow-xl flex flex-col justify-between relative overflow-hidden">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Meta Mensal</span>
+              {isEditingMeta ? (
+                <div className="flex items-center gap-1.5 pt-1">
+                  <span className="text-sm font-bold text-slate-400">R$</span>
+                  <input 
+                    type="number" 
+                    className="bg-white/10 border border-white/20 rounded-lg px-2 py-0.5 text-sm font-bold text-white w-24 focus:outline-none"
+                    value={tempMeta}
+                    onChange={(e) => setTempMeta(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSaveMeta()}
+                  />
+                  <button onClick={handleSaveMeta} className="text-emerald-400 hover:text-white p-1 hover:bg-emerald-500/10 rounded-lg">
+                    <Check size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-white">R$ {metaFaturamento.toLocaleString("pt-BR")}</span>
+                  <button onClick={() => setIsEditingMeta(true)} className="text-slate-400 hover:text-white p-1 hover:bg-white/5 rounded-lg">
+                    <Edit2 size={12} />
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="w-10 h-10 bg-[#2D2B7A]/20 text-[#c2c1ff] rounded-xl flex items-center justify-center shrink-0">
+              <Target size={20} />
+            </div>
           </div>
-          <div className="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-xl flex items-center justify-center shrink-0">
-            <TrendingUp size={24} />
+          
+          <div className="mt-3.5 space-y-1">
+            <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase">
+              <span>Progresso</span>
+              <span>{percentMeta}%</span>
+            </div>
+            <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden border border-white/5">
+              <div 
+                className="bg-gradient-to-r from-[#2D2B7A] to-[#4A47FF] h-full rounded-full transition-all duration-500" 
+                style={{ width: `${percentMeta}%` }}
+              />
+            </div>
           </div>
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-indigo-500/30"></div>
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-[#2D2B7A]"></div>
         </div>
 
         {/* Ticket Médio */}
@@ -382,6 +504,132 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── Nova Linha: Conversão e Status de Orçamentos ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Bloco Conversão Comercial */}
+        <div className="glass p-6 rounded-2xl shadow-xl flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+            <h3 className="font-bold text-white text-base">Conversão Comercial</h3>
+            <Percent size={18} className="text-slate-400" />
+          </div>
+
+          <div className="flex flex-col items-center py-6">
+            <div className="relative flex items-center justify-center">
+              {/* Outer Ring */}
+              <div className="w-28 h-28 rounded-full border-8 border-white/5 flex items-center justify-center">
+                <span className="text-2xl font-bold text-white">{taxaConversao.toFixed(0)}%</span>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 text-center mt-4 max-w-[200px]">
+              Proporção de orçamentos aprovados/concluídos sobre o total emitido
+            </p>
+          </div>
+
+          <div className="border-t border-white/5 pt-3 flex justify-between text-xs text-slate-400 font-semibold">
+            <span>Emitidos: {totalOrcamentos}</span>
+            <span>Ganhos: {aprovadosCount + concluidosCount}</span>
+          </div>
+        </div>
+
+        {/* Bloco Status de Orçamentos */}
+        <div className="glass p-6 rounded-2xl shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+            <h3 className="font-bold text-white text-base">Status de Orçamentos</h3>
+            <Clock size={18} className="text-slate-400" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div 
+              onClick={() => navigate("/admin/orcamentos?status=Pendente")}
+              className="bg-white/2 p-3 rounded-xl border border-white/2 flex items-center gap-2 cursor-pointer hover:bg-white/5 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+              <div className="text-xs">
+                <span className="font-bold text-white block">{pendentesCount}</span>
+                <span className="text-slate-500 block uppercase text-[9px] font-bold">Pendentes</span>
+              </div>
+            </div>
+            <div 
+              onClick={() => navigate("/admin/orcamentos?status=Aprovado")}
+              className="bg-white/2 p-3 rounded-xl border border-white/2 flex items-center gap-2 cursor-pointer hover:bg-white/5 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <div className="text-xs">
+                <span className="font-bold text-white block">{aprovadosCount}</span>
+                <span className="text-slate-500 block uppercase text-[9px] font-bold">Aprovados</span>
+              </div>
+            </div>
+            <div 
+              onClick={() => navigate("/admin/orcamentos?status=Recusado")}
+              className="bg-white/2 p-3 rounded-xl border border-white/2 flex items-center gap-2 cursor-pointer hover:bg-white/5 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+              <div className="text-xs">
+                <span className="font-bold text-white block">{recusadosCount}</span>
+                <span className="text-slate-500 block uppercase text-[9px] font-bold">Recusados</span>
+              </div>
+            </div>
+            <div 
+              onClick={() => navigate("/admin/orcamentos?status=Concluído")}
+              className="bg-white/2 p-3 rounded-xl border border-white/2 flex items-center gap-2 cursor-pointer hover:bg-white/5 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              <div className="text-xs">
+                <span className="font-bold text-white block">{concluidosCount}</span>
+                <span className="text-slate-500 block uppercase text-[9px] font-bold">Concluídos</span>
+              </div>
+            </div>
+            <div 
+              onClick={() => navigate("/admin/orcamentos?status=Vencido")}
+              className="bg-rose-500/10 p-3 rounded-xl border border-rose-500/10 flex items-center gap-2 col-span-2 cursor-pointer hover:bg-rose-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all"
+            >
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+              <div className="text-xs flex justify-between items-center w-full">
+                <span className="text-slate-400 block text-[9px] font-bold uppercase">Aguardando Resposta (Vencidos)</span>
+                <span className="font-bold text-rose-400">{vencidosCount} orçamentos</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bloco Alerta de Orçamentos Sem Resposta (X+ dias) */}
+        <div className="glass p-6 rounded-2xl shadow-xl space-y-3 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between border-b border-white/5 pb-4">
+              <h3 className="font-bold text-white text-base">⚠️ Alertas de Follow-up</h3>
+              <span className="bg-amber-500/10 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-full">{configs.dias_alerta_followup}+ dias parados</span>
+            </div>
+
+            {alertasOrcamentos.length === 0 ? (
+              <p className="text-xs text-slate-500 text-center py-6">Nenhum orçamento pendente há mais de {configs.dias_alerta_followup} dias.</p>
+            ) : (
+              <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
+                {alertasOrcamentos.slice(0, 3).map(o => (
+                  <div key={o.id} className="flex justify-between items-center bg-white/2 p-2.5 rounded-xl border border-white/2">
+                    <div className="text-xs">
+                      <span className="font-bold text-white block">{o.id} - {o.cliente_nome}</span>
+                      <span className="text-slate-500 block">Emitido em {format(new Date(o.data_emissao + "T00:00:00"), "dd/MM/yy")}</span>
+                    </div>
+                    <button 
+                      onClick={() => handleWhatsAppAlert(o)}
+                      className="text-emerald-500 hover:text-white hover:bg-emerald-500/10 p-1.5 rounded-lg transition-all"
+                      title="Nudge por WhatsApp"
+                    >
+                      <MessageSquare size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {alertasOrcamentos.length > 3 && (
+            <p className="text-[10px] text-slate-500 text-right mt-1">+ {alertasOrcamentos.length - 3} alertas ocultados</p>
+          )}
+        </div>
+
       </div>
 
       {/* ── Rankings, Funil e Serviços Populares ── */}

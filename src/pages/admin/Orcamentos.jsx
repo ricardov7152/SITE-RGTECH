@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { db } from "../../services/supabase";
 import { 
   Plus, 
@@ -16,6 +16,7 @@ import { format } from "date-fns";
 
 export default function Orcamentos() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [orcamentos, setOrcamentos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [search, setSearch] = useState("");
@@ -38,16 +39,25 @@ export default function Orcamentos() {
 
   useEffect(() => {
     loadData();
-  }, []);
+    const statusParam = searchParams.get("status");
+    if (statusParam) {
+      setFilterStatus(statusParam);
+    }
+  }, [searchParams]);
 
   const handleUpdateStatus = async (id, status) => {
-    const confirmation = window.confirm(`Deseja alterar o status deste orçamento para "${status}"?` + 
-      (status === "Aprovado" ? " Isso gerará automaticamente um lançamento no Módulo Financeiro." : ""));
-    
-    if (!confirmation) return;
+    let motivo = null;
+    if (status === "Recusado") {
+      motivo = window.prompt("Deseja informar o motivo da recusa? (Opcional):");
+      if (motivo === null) return; // cancelado
+    } else {
+      const confirmation = window.confirm(`Deseja alterar o status deste orçamento para "${status}"?` + 
+        (status === "Aprovado" ? " Isso gerará automaticamente um lançamento no Módulo Financeiro." : ""));
+      if (!confirmation) return;
+    }
 
     try {
-      await db.orcamentos.updateStatus(id, status);
+      await db.orcamentos.updateStatus(id, status, motivo);
       loadData();
     } catch (err) {
       console.error(err);
@@ -110,16 +120,30 @@ export default function Orcamentos() {
     window.open(link, "_blank");
   };
 
-  const getStatusStyle = (status) => {
-    switch (status) {
+  const getBudgetState = (orc) => {
+    if (orc.status !== "Em aberto") return orc.status;
+    
+    const hoje = new Date();
+    const dataEmissao = new Date(orc.data_emissao + "T00:00:00");
+    const validadeDias = orc.validade_dias || 7;
+    const dataVencimento = new Date(dataEmissao);
+    dataVencimento.setDate(dataVencimento.getDate() + validadeDias);
+    
+    return hoje > dataVencimento ? "Vencido" : "Pendente";
+  };
+
+  const getStatusStyle = (displayStatus) => {
+    switch (displayStatus) {
       case "Aprovado":
         return "bg-emerald-500/10 text-emerald-400";
       case "Recusado":
         return "bg-rose-500/10 text-rose-400";
       case "Concluído":
         return "bg-blue-500/10 text-blue-400";
-      default:
-        return "bg-amber-500/10 text-amber-400"; // Em aberto
+      case "Vencido":
+        return "bg-rose-500/10 text-rose-400 border border-rose-500/20";
+      default: // Pendente
+        return "bg-amber-500/10 text-amber-400";
     }
   };
 
@@ -127,7 +151,10 @@ export default function Orcamentos() {
   const filteredOrcamentos = orcamentos.filter(o => {
     const matchesSearch = o.cliente_nome.toLowerCase().includes(search.toLowerCase()) || 
                           o.id.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = filterStatus === "Todos" || o.status === filterStatus;
+    const displayStatus = getBudgetState(o);
+    const matchesStatus = filterStatus === "Todos" || 
+                          (filterStatus === "Em aberto" && o.status === "Em aberto") ||
+                          displayStatus === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
@@ -167,7 +194,8 @@ export default function Orcamentos() {
             onChange={(e) => setFilterStatus(e.target.value)}
           >
             <option value="Todos">Todos os Status</option>
-            <option value="Em aberto">Em aberto</option>
+            <option value="Pendente">Pendente (Em aberto)</option>
+            <option value="Vencido">Vencido (Expirado)</option>
             <option value="Aprovado">Aprovado</option>
             <option value="Recusado">Recusado</option>
             <option value="Concluído">Concluído</option>
@@ -205,9 +233,14 @@ export default function Orcamentos() {
                     </td>
                     <td className="py-3.5 font-bold text-white">R$ {Number(o.total).toFixed(2)}</td>
                     <td className="py-3.5">
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${getStatusStyle(o.status)}`}>
-                        {o.status}
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${getStatusStyle(getBudgetState(o))}`}>
+                        {getBudgetState(o)}
                       </span>
+                      {o.status === "Recusado" && o.motivo_recusa && (
+                        <span className="block text-[10px] text-slate-500 mt-1 italic max-w-[150px] truncate" title={o.motivo_recusa}>
+                          Motivo: {o.motivo_recusa}
+                        </span>
+                      )}
                     </td>
                     <td className="py-3.5 text-right space-x-1 whitespace-nowrap">
                       {/* Enviar WhatsApp */}

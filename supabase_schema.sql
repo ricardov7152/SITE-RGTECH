@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.clientes (
     telefone TEXT,
     email TEXT,
     endereco TEXT,
-    origem TEXT CHECK (origem IN ('Indicação', 'Google', 'Instagram', 'Site', 'Outros')),
+    origem TEXT CHECK (origem IN ('Indicação', 'Google', 'Instagram', 'Site', 'WhatsApp', 'Outros')),
     
     -- Exclusivos para Pessoa Jurídica (PJ)
     nome_fantasia TEXT,
@@ -59,7 +59,8 @@ CREATE TABLE IF NOT EXISTS public.orcamentos (
     validade_dias INTEGER DEFAULT 7,
     prazo_entrega TEXT,
     forma_pagamento TEXT,
-    observacoes TEXT
+    observacoes TEXT,
+    motivo_recusa TEXT
 );
 
 -- 4. Tabela de Itens do Orçamento
