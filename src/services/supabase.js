@@ -35,18 +35,64 @@ const localDB = {
 
 // Massa de dados inicial padrão caso o local esteja vazio
 const initLocalData = () => {
+  const currentFin = localStorage.getItem("rg_local_financeiro");
+  if (currentFin && !currentFin.includes("f3")) {
+    localStorage.removeItem("rg_local_financeiro");
+  }
+
+  const currentProd = localStorage.getItem("rg_local_produtos");
+  if (currentProd && !currentProd.includes("preco_custo")) {
+    localStorage.removeItem("rg_local_produtos");
+  }
+
   if (!localStorage.getItem("rg_local_produtos")) {
     localDB.set("produtos", [
-      { id: "p1", nome: "Formatação com Instalação Padrão", tipo: "Serviço", preco: 120.00, garantia: "30 dias", descricao: "Instalação de Windows e programas essenciais." },
-      { id: "p2", nome: "Limpeza Preventiva e Troca de Pasta Térmica", tipo: "Serviço", preco: 80.00, garantia: "30 dias", descricao: "Troca por pasta térmica premium." },
-      { id: "p3", nome: "SSD Kingston 480GB SATA III", tipo: "Peça", preco: 250.00, garantia: "1 Ano do Fabricante", descricao: "Unidade de estado sólido para upgrade." },
-      { id: "p4", nome: "Memória RAM DDR4 8GB 3200MHz", tipo: "Peça", preco: 180.00, garantia: "1 Ano", descricao: "Pente de memória para upgrade." }
+      { id: "p1", nome: "Formatação com Instalação Padrão", tipo: "Serviço", preco: 120.00, preco_custo: 0.00, estoque_atual: 0, status_item: "Ativo", garantia_valor: 30, garantia_unidade: "Dias", garantia: "30 Dias", categoria: "Serviços", subcategoria: "Software", descricao: "Instalação de Windows e programas essenciais." },
+      { id: "p2", nome: "Limpeza Preventiva e Troca de Pasta Térmica", tipo: "Serviço", preco: 80.00, preco_custo: 10.00, estoque_atual: 0, status_item: "Ativo", garantia_valor: 30, garantia_unidade: "Dias", garantia: "30 Dias", categoria: "Serviços", subcategoria: "Limpeza", descricao: "Troca por pasta térmica premium." },
+      { id: "p3", nome: "SSD Kingston 480GB SATA III", tipo: "Peça", preco: 250.00, preco_custo: 160.00, estoque_atual: 5, status_item: "Ativo", garantia_valor: 1, garantia_unidade: "Anos", garantia: "1 Ano", fornecedor: "Kingston Oficial", categoria: "Armazenamento", subcategoria: "SSD", descricao: "Unidade de estado sólido para upgrade." },
+      { id: "p4", nome: "Memória RAM DDR4 8GB 3200MHz", tipo: "Peça", preco: 180.00, preco_custo: 110.00, estoque_atual: 8, status_item: "Ativo", garantia_valor: 1, garantia_unidade: "Anos", garantia: "1 Ano", fornecedor: "Kabum S/A", categoria: "Memória", subcategoria: "RAM DDR4", descricao: "Pente de memória para upgrade." }
     ]);
   }
   if (!localStorage.getItem("rg_local_clientes")) {
     localDB.set("clientes", [
-      { id: "c1", tipo_pessoa: "PF", nome_completo: "Ricardo Bertollo", cpf_cnpj: "123.456.789-00", telefone: "(66) 99999-9999", email: "ricardo@email.com", endereco: "Rua Celeste, 670, Sorriso - MT", origem: "Site" },
-      { id: "c2", tipo_pessoa: "PJ", nome_completo: "Paiol Comercial Agrícola", cpf_cnpj: "12.345.678/0001-99", telefone: "(66) 3544-0000", email: "compras@paiol.com.br", endereco: "Sorriso - MT", origem: "Indicação", nome_fantasia: "Paiol Agrícola", inscricao_estadual: "987654321", nome_responsavel: "Glauber Compras" }
+      { 
+        id: "c1", 
+        tipo_pessoa: "PF", 
+        nome_completo: "Ricardo Bertollo", 
+        cpf_cnpj: "123.456.789-00", 
+        telefone: "(66) 99999-9999", 
+        email: "ricardo@email.com", 
+        endereco: "Rua Celeste, 670, Sorriso - MT", 
+        origem: "Site",
+        consentimento_marketing: true,
+        data_nascimento_fundacao: "1995-10-15",
+        observacoes_internas: "Cliente VIP, prefere atendimento à tarde.",
+        data_cadastro: "2026-01-10",
+        status_cliente: "Ativo",
+        tags: "VIP, Gamer",
+        ultimo_contato: "2026-06-15"
+      },
+      { 
+        id: "c2", 
+        tipo_pessoa: "PJ", 
+        nome_completo: "Paiol Comercial Agrícola", 
+        cpf_cnpj: "12.345.678/0001-99", 
+        telefone: "(66) 3544-0000", 
+        email: "compras@paiol.com.br", 
+        endereco: "Sorriso - MT", 
+        origem: "Indicação", 
+        nome_fantasia: "Paiol Agrícola", 
+        inscricao_estadual: "987654321", 
+        nome_responsavel: "Glauber Compras",
+        consentimento_marketing: false,
+        data_nascimento_fundacao: "2010-05-20",
+        observacoes_internas: "Sempre pede faturamento em boleto para 30 dias.",
+        data_cadastro: "2026-03-15",
+        status_cliente: "Ativo",
+        tags: "Agro, Recorrente",
+        indicado_por_id: "c1",
+        ultimo_contato: "2026-06-17"
+      }
     ]);
   }
   if (!localStorage.getItem("rg_local_orcamentos")) {
@@ -61,10 +107,34 @@ const initLocalData = () => {
     ]);
   }
   if (!localStorage.getItem("rg_local_financeiro")) {
+    const getFutureDateString = (days) => {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split("T")[0];
+    };
+
     localDB.set("financeiro", [
       { id: "f1", created_at: new Date().toISOString(), tipo: "Receita", categoria: "Orçamento", descricao: "Orçamento Aprovado ORC-2026-1001 - Ricardo Bertollo", valor: 350.00, status: "Pago", cliente_id: "c1", orcamento_id: "ORC-2026-1001", data_vencimento: "2026-06-02", data_pagamento: "2026-06-02", banco: "Nubank", meio_pagamento: "PIX", valor_pix: 350.00, valor_cartao: 0.00, valor_dinheiro: 0.00, desconto: 20.00, observacoes: "Lançamento automático de aprovação." },
-      { id: "f2", created_at: new Date().toISOString(), tipo: "Despesa", categoria: "Marketing", descricao: "Anúncios no Instagram", valor: 100.00, status: "Pago", data_vencimento: "2026-06-01", data_pagamento: "2026-06-01", banco: "Nubank", meio_pagamento: "PIX", valor_pix: 100.00 }
+      { id: "f2", created_at: new Date().toISOString(), tipo: "Despesa", categoria: "Marketing", descricao: "Anúncios no Instagram", valor: 100.00, status: "Pago", data_vencimento: "2026-06-01", data_pagamento: "2026-06-01", banco: "Nubank", meio_pagamento: "PIX", valor_pix: 100.00 },
+      // Lançamentos pendentes futuros para demonstrar a Projeção (Fluxo de Caixa Projetado)
+      { id: "f3", created_at: new Date().toISOString(), tipo: "Receita", categoria: "Orçamento", descricao: "Orçamento Futuro Projetado - Ricardo Bertollo", valor: 500.00, status: "Pendente", cliente_id: "c1", data_vencimento: getFutureDateString(5) },
+      { id: "f4", created_at: new Date().toISOString(), tipo: "Receita", categoria: "Orçamento", descricao: "Manutenção Projetada - Paiol Agrícola", valor: 1200.00, status: "Pendente", cliente_id: "c2", data_vencimento: getFutureDateString(12) },
+      { id: "f5", created_at: new Date().toISOString(), tipo: "Despesa", categoria: "Peças", descricao: "Compra de Componentes Importados", valor: 300.00, status: "Pendente", data_vencimento: getFutureDateString(6) },
+      { id: "f6", created_at: new Date().toISOString(), tipo: "Despesa", categoria: "Aluguel", descricao: "Aluguel Mensal - Ponto Comercial", valor: 1500.00, status: "Pendente", data_vencimento: getFutureDateString(20), recorrente: true, frequencia: "Mensal" }
     ]);
+  }
+
+  if (!localStorage.getItem("rg_local_categorias_produtos")) {
+    localStorage.setItem("rg_local_categorias_produtos", JSON.stringify({
+      "Serviço": ["Serviços", "Consultoria", "Licenças", "Outros"],
+      "Peça": ["Armazenamento", "Memória", "Processadores", "Placas de Vídeo", "Placas-Mãe", "Fontes", "Gabinetes", "Periféricos", "Outros"]
+    }));
+  }
+
+  if (!localStorage.getItem("rg_local_subcategorias_produtos")) {
+    localStorage.setItem("rg_local_subcategorias_produtos", JSON.stringify([
+      "SSD SATA", "SSD M.2 NVMe", "HD Externo", "RAM DDR4", "RAM DDR5", "Mouse Gamer", "Teclado Mecânico"
+    ]));
   }
 };
 

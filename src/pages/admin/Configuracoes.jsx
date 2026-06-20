@@ -16,6 +16,14 @@ export default function Configuracoes() {
   const [metaValue, setMetaValue] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
+  // Estados de taxonomia de produtos
+  const [categorias, setCategorias] = useState({ "Serviço": [], "Peça": [] });
+  const [subcategorias, setSubcategorias] = useState([]);
+  
+  const [novaCatServico, setNovaCatServico] = useState("");
+  const [novaCatPeca, setNovaCatPeca] = useState("");
+  const [novaSubcat, setNovaSubcat] = useState("");
+
   useEffect(() => {
     const stored = localStorage.getItem("rg_local_configuracoes");
     if (stored) {
@@ -40,7 +48,79 @@ export default function Configuracoes() {
         localStorage.setItem("rg_local_configuracoes", JSON.stringify(initialConfigs));
       }
     }
+
+    // Carregar taxonomia de produtos
+    const catsStored = localStorage.getItem("rg_local_categorias_produtos");
+    const subcatsStored = localStorage.getItem("rg_local_subcategorias_produtos");
+    
+    const defaultCats = {
+      "Serviço": ["Serviços", "Consultoria", "Licenças", "Outros"],
+      "Peça": ["Armazenamento", "Memória", "Processadores", "Placas de Vídeo", "Placas-Mãe", "Fontes", "Gabinetes", "Periféricos", "Outros"]
+    };
+    const defaultSubcats = ["SSD SATA", "SSD M.2 NVMe", "HD Externo", "RAM DDR4", "RAM DDR5", "Mouse Gamer", "Teclado Mecânico"];
+    
+    setCategorias(catsStored ? JSON.parse(catsStored) : defaultCats);
+    setSubcategorias(subcatsStored ? JSON.parse(subcatsStored) : defaultSubcats);
   }, []);
+
+  const handleAddCat = (tipo, val) => {
+    if (!val.trim()) return;
+    const trimmed = val.trim();
+    if (categorias[tipo].includes(trimmed)) {
+      alert("Categoria já cadastrada!");
+      return;
+    }
+    const updated = {
+      ...categorias,
+      [tipo]: [...categorias[tipo], trimmed]
+    };
+    setCategorias(updated);
+    localStorage.setItem("rg_local_categorias_produtos", JSON.stringify(updated));
+    if (tipo === "Serviço") setNovaCatServico("");
+    else setNovaCatPeca("");
+    
+    setSuccessMsg(`Categoria "${trimmed}" adicionada!`);
+    setTimeout(() => setSuccessMsg(""), 3000);
+  };
+
+  const handleRemoveCat = (tipo, val) => {
+    if (!window.confirm(`Deseja remover a categoria "${val}"? Todos os produtos dessa categoria perderão essa referência se editados futuramente.`)) return;
+    const updated = {
+      ...categorias,
+      [tipo]: categorias[tipo].filter(c => c !== val)
+    };
+    setCategorias(updated);
+    localStorage.setItem("rg_local_categorias_produtos", JSON.stringify(updated));
+    
+    setSuccessMsg(`Categoria removida!`);
+    setTimeout(() => setSuccessMsg(""), 3000);
+  };
+
+  const handleAddSubcat = () => {
+    if (!novaSubcat.trim()) return;
+    const val = novaSubcat.trim();
+    if (subcategorias.includes(val)) {
+      alert("Subcategoria já cadastrada!");
+      return;
+    }
+    const updated = [...subcategorias, val];
+    setSubcategorias(updated);
+    localStorage.setItem("rg_local_subcategorias_produtos", JSON.stringify(updated));
+    setNovaSubcat("");
+    
+    setSuccessMsg(`Subcategoria "${val}" adicionada!`);
+    setTimeout(() => setSuccessMsg(""), 3000);
+  };
+
+  const handleRemoveSubcat = (val) => {
+    if (!window.confirm(`Deseja remover a subcategoria "${val}"?`)) return;
+    const updated = subcategorias.filter(s => s !== val);
+    setSubcategorias(updated);
+    localStorage.setItem("rg_local_subcategorias_produtos", JSON.stringify(updated));
+    
+    setSuccessMsg(`Subcategoria removida!`);
+    setTimeout(() => setSuccessMsg(""), 3000);
+  };
 
   const saveConfigs = (newConfigs) => {
     setConfigs(newConfigs);
@@ -229,6 +309,121 @@ export default function Configuracoes() {
           </div>
         </div>
 
+      </div>
+
+      {/* Gestão de Taxonomia do Catálogo */}
+      <div className="glass p-6 rounded-2xl shadow-xl space-y-6">
+        <div className="flex items-center gap-2.5 border-b border-white/5 pb-4">
+          <Settings className="text-[#4A47FF]" size={20} />
+          <h3 className="font-bold text-white text-base">Categorias & Subcategorias do Catálogo</h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Categorias de Peças */}
+          <div className="space-y-4">
+            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Categorias de Peças</h4>
+            <div className="flex gap-2">
+              <input 
+                type="text"
+                placeholder="Nova Categoria Peça..."
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none"
+                value={novaCatPeca}
+                onChange={(e) => setNovaCatPeca(e.target.value)}
+              />
+              <button 
+                type="button"
+                onClick={() => handleAddCat("Peça", novaCatPeca)}
+                className="bg-[#2D2B7A] hover:bg-[#4A47FF] px-3 py-2 rounded-xl text-xs font-bold text-white transition-all whitespace-nowrap"
+              >
+                Adicionar
+              </button>
+            </div>
+            <div className="max-h-60 overflow-y-auto bg-white/2 rounded-xl border border-white/5 divide-y divide-white/5">
+              {categorias["Peça"].map(cat => (
+                <div key={cat} className="flex justify-between items-center px-3 py-2">
+                  <span className="text-xs text-white">{cat}</span>
+                  <button 
+                    type="button"
+                    onClick={() => handleRemoveCat("Peça", cat)}
+                    className="text-red-500 hover:text-red-400 p-1 rounded hover:bg-white/5 transition-all"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Categorias de Serviços */}
+          <div className="space-y-4">
+            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Categorias de Serviços</h4>
+            <div className="flex gap-2">
+              <input 
+                type="text"
+                placeholder="Nova Categoria Serviço..."
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none"
+                value={novaCatServico}
+                onChange={(e) => setNovaCatServico(e.target.value)}
+              />
+              <button 
+                type="button"
+                onClick={() => handleAddCat("Serviço", novaCatServico)}
+                className="bg-[#2D2B7A] hover:bg-[#4A47FF] px-3 py-2 rounded-xl text-xs font-bold text-white transition-all whitespace-nowrap"
+              >
+                Adicionar
+              </button>
+            </div>
+            <div className="max-h-60 overflow-y-auto bg-white/2 rounded-xl border border-white/5 divide-y divide-white/5">
+              {categorias["Serviço"].map(cat => (
+                <div key={cat} className="flex justify-between items-center px-3 py-2">
+                  <span className="text-xs text-white">{cat}</span>
+                  <button 
+                    type="button"
+                    onClick={() => handleRemoveCat("Serviço", cat)}
+                    className="text-red-500 hover:text-red-400 p-1 rounded hover:bg-white/5 transition-all"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Subcategorias Sugeridas */}
+          <div className="space-y-4">
+            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Subcategorias Sugeridas</h4>
+            <div className="flex gap-2">
+              <input 
+                type="text"
+                placeholder="Nova Subcategoria..."
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none"
+                value={novaSubcat}
+                onChange={(e) => setNovaSubcat(e.target.value)}
+              />
+              <button 
+                type="button"
+                onClick={handleAddSubcat}
+                className="bg-[#2D2B7A] hover:bg-[#4A47FF] px-3 py-2 rounded-xl text-xs font-bold text-white transition-all whitespace-nowrap"
+              >
+                Adicionar
+              </button>
+            </div>
+            <div className="max-h-60 overflow-y-auto bg-white/2 rounded-xl border border-white/5 divide-y divide-white/5">
+              {subcategorias.map(sub => (
+                <div key={sub} className="flex justify-between items-center px-3 py-2">
+                  <span className="text-xs text-white">{sub}</span>
+                  <button 
+                    type="button"
+                    onClick={() => handleRemoveSubcat(sub)}
+                    className="text-red-500 hover:text-red-400 p-1 rounded hover:bg-white/5 transition-all"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

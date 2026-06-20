@@ -18,7 +18,17 @@ CREATE TABLE IF NOT EXISTS public.clientes (
     -- Exclusivos para Pessoa Jurídica (PJ)
     nome_fantasia TEXT,
     inscricao_estadual TEXT,
-    nome_responsavel TEXT
+    nome_responsavel TEXT,
+
+    -- Novos Campos CRM
+    consentimento_marketing BOOLEAN DEFAULT FALSE,
+    data_nascimento_fundacao DATE,
+    observacoes_internas TEXT,
+    data_cadastro DATE DEFAULT CURRENT_DATE,
+    status_cliente TEXT DEFAULT 'Lead' CHECK (status_cliente IN ('Lead', 'Ativo', 'Inativo')),
+    indicado_por_id UUID REFERENCES public.clientes(id) ON DELETE SET NULL,
+    tags TEXT,
+    ultimo_contato DATE
 );
 
 -- 2. Tabela de Produtos e Serviços
@@ -29,7 +39,15 @@ CREATE TABLE IF NOT EXISTS public.produtos (
     descricao TEXT,
     tipo TEXT NOT NULL CHECK (tipo IN ('Serviço', 'Peça')),
     preco NUMERIC(10,2) DEFAULT 0.00,
-    garantia TEXT
+    preco_custo NUMERIC(10,2) DEFAULT 0.00,
+    estoque_atual INTEGER DEFAULT 0,
+    status_item TEXT CHECK (status_item IN ('Ativo', 'Inativo')) DEFAULT 'Ativo',
+    garantia_valor INTEGER,
+    garantia_unidade TEXT CHECK (garantia_unidade IN ('Dias', 'Meses', 'Anos')),
+    fornecedor TEXT,
+    categoria TEXT,
+    subcategoria TEXT,
+    garantia TEXT -- Mantido para retrocompatibilidade se necessário
 );
 
 -- 3. Tabela de Orçamentos
