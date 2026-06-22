@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { trackPageView } from "../services/analytics";
 
 const WA_LINK = "https://wa.me/5566999298666?text=Ol%C3%A1%2C%20vim%20pelo%20site%20e%20gostaria%20de%20solicitar%20um%20or%C3%A7amento!";
 const WA_SERVICO = (servico) =>
@@ -13,6 +14,10 @@ const marcas = [
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  useEffect(() => {
+    trackPageView("Página Inicial", "/");
+  }, []);
 
   return (
     <div className="overflow-x-hidden bg-[#0D0D0D] text-[#e2e2e2] font-inter">

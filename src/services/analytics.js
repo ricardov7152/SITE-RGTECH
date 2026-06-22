@@ -23,21 +23,34 @@ export const initGA = () => {
     window.dataLayer.push(arguments);
   };
 
-  // 3. Registrar o carregamento inicial do script e configurar o ID
+  // 3. Registrar o carregamento inicial do script
   window.gtag("js", new Date());
+  
+  // Desabilitamos o envio automático de visualizações de páginas (send_page_view: false)
+  // Isso impede que o GA4 rastreie automaticamente as transições de rotas internas (ERP/Login) no SPA
   window.gtag("config", measurementId, {
-    send_page_view: true // Rastreia visualizações automaticamente (incluindo SPAs via histórico de rotas)
+    send_page_view: false
   });
 
-  console.log(`GA4: Inicializado com sucesso para o ID ${measurementId}`);
+  console.log(`GA4: Inicializado para o ID ${measurementId} (apenas rastreamento manual ativado).`);
+};
+
+/**
+ * Registra manualmente a visualização de uma página específica
+ * @param {string} title - Título da página (ex: 'Home')
+ * @param {string} path - Caminho/Rota (ex: '/')
+ */
+export const trackPageView = (title, path) => {
+  if (window.gtag) {
+    window.gtag("event", "page_view", {
+      page_title: title,
+      page_path: path
+    });
+  }
 };
 
 /**
  * Função para registrar eventos customizados dentro da aplicação
- * @param {string} action - Nome do evento (ex: 'click_whatsapp')
- * @param {string} category - Categoria (ex: 'Lead')
- * @param {string} label - Rótulo do evento (ex: 'Origem: Ficha Cliente')
- * @param {number} [value] - Valor associado ao evento
  */
 export const trackEvent = (action, category, label, value) => {
   if (window.gtag) {
