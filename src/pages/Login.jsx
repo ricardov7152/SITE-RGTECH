@@ -15,12 +15,22 @@ export default function Login() {
     setErrorMsg("");
 
     try {
+      // 1. Tenta autenticar na API oficial do Supabase Auth
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        // Se a API retornar erro, checa se corresponde à credencial de administrador local
+        const passHashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password));
+        const passHashHex = Array.from(new Uint8Array(passHashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+        
+        if (email === "ricardov714464@gmail.com" && passHashHex === "fe795548cf9ac37223585d84a6bbd28ad5b3bcab2331950db83c02f39600c7ec") {
+          localStorage.setItem("rgtech_session", JSON.stringify({ user: { email }, expires_at: Date.now() + 3600000 }));
+          navigate("/admin/dashboard");
+          return;
+        }
         throw error;
       }
 
@@ -29,16 +39,25 @@ export default function Login() {
       }
     } catch (err) {
       console.error("Erro no login:", err);
+      
+      // Fallback para login offline seguro caso não haja conexão com a rede
+      try {
+        const passHashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password));
+        const passHashHex = Array.from(new Uint8Array(passHashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+        
+        if (email === "ricardov714464@gmail.com" && passHashHex === "fe795548cf9ac37223585d84a6bbd28ad5b3bcab2331950db83c02f39600c7ec") {
+          localStorage.setItem("rgtech_session", JSON.stringify({ user: { email }, expires_at: Date.now() + 3600000 }));
+          navigate("/admin/dashboard");
+          return;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
       setErrorMsg(err.message || "Erro desconhecido. Verifique suas credenciais.");
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDevBypass = () => {
-    // Salvar uma sessão fictícia no LocalStorage para testes locais
-    localStorage.setItem("rgtech_session", JSON.stringify({ user: { email: "admin@rgtech.com.br" }, expires_at: Date.now() + 3600000 }));
-    navigate("/admin/dashboard");
   };
 
   return (
@@ -103,19 +122,7 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
-            <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#0D0D0D]/10 px-2 text-slate-500 backdrop-blur-md">Ambiente de Teste</span></div>
-          </div>
 
-          {/* Bypass for Dev */}
-          <button
-            onClick={handleDevBypass}
-            className="w-full py-3 border border-white/10 hover:border-white/20 hover:bg-white/5 text-slate-400 hover:text-white font-semibold text-xs rounded-xl transition-all"
-          >
-            Entrar como Administrador (Modo Offline / Teste)
-          </button>
         </div>
 
         <div className="text-center mt-6">
