@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
   FileText, 
+  Wrench,
   Users, 
   TrendingUp, 
   Package, 
@@ -32,6 +33,7 @@ export default function Layout() {
   const navItems = [
     { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/admin/orcamentos", label: "Orçamentos", icon: FileText },
+    { to: "/admin/ordens-servico", label: "Ordens de Serviço", icon: Wrench },
     { to: "/admin/clientes", label: "Clientes", icon: Users },
     { to: "/admin/financeiro", label: "Financeiro", icon: TrendingUp },
     { to: "/admin/produtos", label: "Produtos & Peças", icon: Package },

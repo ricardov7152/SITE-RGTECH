@@ -12,6 +12,7 @@ import Orcamentos from "./pages/admin/Orcamentos";
 import CriarOrcamento from "./pages/admin/CriarOrcamento";
 import Financeiro from "./pages/admin/Financeiro";
 import Configuracoes from "./pages/admin/Configuracoes";
+import OrdemServico from "./pages/admin/OrdemServico";
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="orcamentos" element={<Orcamentos />} />
           <Route path="orcamentos/novo" element={<CriarOrcamento />} />
           <Route path="orcamentos/editar/:id" element={<CriarOrcamento />} />
+          <Route path="ordens-servico" element={<OrdemServico />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="financeiro" element={<Financeiro />} />
           <Route path="produtos" element={<Produtos />} />

@@ -133,12 +133,54 @@ ALTER TABLE public.orcamentos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orcamento_itens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.financeiro ENABLE ROW LEVEL SECURITY;
 
+-- 6. Tabela de Ordem de Serviço
+CREATE TABLE IF NOT EXISTS public.ordem_servico (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    numero_os TEXT UNIQUE NOT NULL,
+    orcamento_id TEXT REFERENCES public.orcamentos(id) ON DELETE SET NULL,
+    cliente_id UUID REFERENCES public.clientes(id) ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'recebido' CHECK (status IN ('recebido', 'em_diagnostico', 'aguardando_peca', 'em_execucao', 'pronto_retirada', 'entregue', 'cancelado')),
+    data_abertura DATE DEFAULT CURRENT_DATE,
+    prazo_entrega_dias INTEGER DEFAULT 5,
+    data_entrega_prevista DATE NOT NULL,
+    data_entrega_real DATE,
+    equipamento_tipo TEXT NOT NULL,
+    equipamento_marca TEXT NOT NULL,
+    equipamento_modelo TEXT,
+    equipamento_numero_serie TEXT,
+    acessorios_entregues TEXT,
+    tecnico_responsavel TEXT,
+    motivo_cancelamento TEXT,
+    observacoes_internas TEXT,
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- 7. Tabela de Itens da Ordem de Serviço
+CREATE TABLE IF NOT EXISTS public.os_itens (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    os_id UUID REFERENCES public.ordem_servico(id) ON DELETE CASCADE,
+    item_catalogo_id UUID REFERENCES public.produtos(id) ON DELETE SET NULL,
+    tipo TEXT NOT NULL CHECK (tipo IN ('Serviço', 'Peça')),
+    quantidade INTEGER NOT NULL DEFAULT 1,
+    valor_unitario NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    garantia_dias INTEGER NOT NULL DEFAULT 0,
+    data_inicio_garantia DATE,
+    data_fim_garantia DATE,
+    status_garantia TEXT CHECK (status_garantia IN ('ativa', 'expirada')) DEFAULT 'ativa'
+);
+
+ALTER TABLE public.ordem_servico ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.os_itens ENABLE ROW LEVEL SECURITY;
+
 -- Remover políticas existentes para evitar erros ao rodar o script novamente
 DROP POLICY IF EXISTS "Permitir tudo anon (Clientes)" ON public.clientes;
 DROP POLICY IF EXISTS "Permitir tudo anon (Produtos)" ON public.produtos;
 DROP POLICY IF EXISTS "Permitir tudo anon (Orçamentos)" ON public.orcamentos;
 DROP POLICY IF EXISTS "Permitir tudo anon (Itens)" ON public.orcamento_itens;
 DROP POLICY IF EXISTS "Permitir tudo anon (Financeiro)" ON public.financeiro;
+DROP POLICY IF EXISTS "Permitir tudo anon (Ordem Servico)" ON public.ordem_servico;
+DROP POLICY IF EXISTS "Permitir tudo anon (OS Itens)" ON public.os_itens;
 
 -- Políticas de acesso aberto (anon/autenticado) para facilitar no dev
 CREATE POLICY "Permitir tudo anon (Clientes)" ON public.clientes FOR ALL TO anon, authenticated USING (true);
@@ -146,3 +188,6 @@ CREATE POLICY "Permitir tudo anon (Produtos)" ON public.produtos FOR ALL TO anon
 CREATE POLICY "Permitir tudo anon (Orçamentos)" ON public.orcamentos FOR ALL TO anon, authenticated USING (true);
 CREATE POLICY "Permitir tudo anon (Itens)" ON public.orcamento_itens FOR ALL TO anon, authenticated USING (true);
 CREATE POLICY "Permitir tudo anon (Financeiro)" ON public.financeiro FOR ALL TO anon, authenticated USING (true);
+CREATE POLICY "Permitir tudo anon (Ordem Servico)" ON public.ordem_servico FOR ALL TO anon, authenticated USING (true);
+CREATE POLICY "Permitir tudo anon (OS Itens)" ON public.os_itens FOR ALL TO anon, authenticated USING (true);
+

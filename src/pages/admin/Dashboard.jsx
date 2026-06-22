@@ -30,6 +30,7 @@ export default function Dashboard() {
   const [orcamentos, setOrcamentos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [itensDeOrcamento, setItensDeOrcamento] = useState([]);
+  const [ordens, setOrdens] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Configurações
@@ -50,11 +51,13 @@ export default function Dashboard() {
         const { data: orcData } = await db.orcamentos.list();
         const { data: cliData } = await db.clientes.list();
         const { data: itemsData } = await db.orcamento_itens.list();
+        const { data: ordensData } = await db.ordem_servico.list();
         
         setFinanceiro(finData || []);
         setOrcamentos(orcData || []);
         setClientes(cliData || []);
         setItensDeOrcamento(itemsData || []);
+        setOrdens(ordensData || []);
 
         const stored = localStorage.getItem("rg_local_configuracoes");
         if (stored) {
@@ -288,6 +291,33 @@ export default function Dashboard() {
     percent: clientes.length > 0 ? Math.round((count / clientes.length) * 100) : 0
   })).sort((a, b) => b.count - a.count);
 
+  // --- CÁLCULOS DAS ORDENS DE SERVIÇO ---
+  let osRecebido = 0;
+  let osEmDiagnostico = 0;
+  let osAguardandoPeca = 0;
+  let osEmExecucao = 0;
+  let osProntoRetirada = 0;
+  let osAtrasadas = 0;
+
+  const hojeStr = new Date().toISOString().split("T")[0];
+
+  ordens.forEach(os => {
+    const status = os.status;
+    if (status !== "entregue" && status !== "cancelado") {
+      if (status === "recebido") osRecebido++;
+      else if (status === "em_diagnostico") osEmDiagnostico++;
+      else if (status === "aguardando_peca") osAguardandoPeca++;
+      else if (status === "em_execucao") osEmExecucao++;
+      else if (status === "pronto_retirada") osProntoRetirada++;
+
+      if (os.data_entrega_prevista && os.data_entrega_prevista < hojeStr) {
+        osAtrasadas++;
+      }
+    }
+  });
+
+  const totalOSAndamento = osRecebido + osEmDiagnostico + osAguardandoPeca + osEmExecucao + osProntoRetirada;
+
   const handleWhatsAppAlert = (orc) => {
     const client = clientes.find(c => c.id === orc.cliente_id);
     if (!client || !client.telefone) {
@@ -411,6 +441,62 @@ export default function Dashboard() {
           <div className={`absolute bottom-0 left-0 w-full h-1 ${
             !temComparativo ? "bg-slate-500/30" : (crescimentoPercentual >= 0 ? "bg-emerald-500/30" : "bg-rose-500/30")
           }`}></div>
+        </div>
+      </div>
+
+      {/* ── Seção de Ordens de Serviço (OS) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Card: OS em Andamento */}
+        <div className="glass p-6 rounded-2xl shadow-xl lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between border-b border-white/5 pb-3">
+            <div className="flex items-center gap-2.5">
+              <Wrench className="text-[#4A47FF]" size={20} />
+              <h3 className="font-bold text-white text-base">OS em Andamento ({totalOSAndamento})</h3>
+            </div>
+            <span className="text-slate-500 text-xs font-medium">Status de execução atual</span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="bg-white/2 p-3.5 rounded-xl border border-white/5 text-center space-y-1">
+              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Recebido</span>
+              <span className="text-xl font-bold text-blue-400 block">{osRecebido}</span>
+            </div>
+            <div className="bg-white/2 p-3.5 rounded-xl border border-white/5 text-center space-y-1">
+              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Diagnóstico</span>
+              <span className="text-xl font-bold text-sky-400 block">{osEmDiagnostico}</span>
+            </div>
+            <div className="bg-white/2 p-3.5 rounded-xl border border-white/5 text-center space-y-1">
+              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Falta Peça</span>
+              <span className="text-xl font-bold text-amber-500 block">{osAguardandoPeca}</span>
+            </div>
+            <div className="bg-white/2 p-3.5 rounded-xl border border-white/5 text-center space-y-1">
+              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Execução</span>
+              <span className="text-xl font-bold text-[#4A47FF] block">{osEmExecucao}</span>
+            </div>
+            <div className="bg-white/2 p-3.5 rounded-xl border border-white/5 text-center space-y-1">
+              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Retirada</span>
+              <span className="text-xl font-bold text-emerald-400 block">{osProntoRetirada}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card: OS Atrasadas */}
+        <div className="glass p-6 rounded-2xl shadow-xl flex items-center justify-between relative overflow-hidden">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">OS Atrasadas</span>
+            <span className={`text-3xl font-extrabold block ${osAtrasadas > 0 ? "text-rose-500 animate-pulse" : "text-slate-300"}`}>
+              {osAtrasadas}
+            </span>
+            <span className="text-xs text-slate-500 block">
+              {osAtrasadas > 0 ? "Requer atenção imediata" : "Nenhum atraso pendente"}
+            </span>
+          </div>
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+            osAtrasadas > 0 ? "bg-rose-500/15 text-rose-400 border border-rose-500/30" : "bg-slate-500/10 text-slate-500 border border-slate-500/10"
+          }`}>
+            <Clock size={24} />
+          </div>
+          <div className={`absolute bottom-0 left-0 w-full h-1 ${osAtrasadas > 0 ? "bg-rose-500/40" : "bg-white/5"}`}></div>
         </div>
       </div>
 

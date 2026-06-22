@@ -136,6 +136,13 @@ const initLocalData = () => {
       "SSD SATA", "SSD M.2 NVMe", "HD Externo", "RAM DDR4", "RAM DDR5", "Mouse Gamer", "Teclado Mecânico"
     ]));
   }
+
+  if (!localStorage.getItem("rg_local_ordens_servico")) {
+    localDB.set("ordens_servico", []);
+  }
+  if (!localStorage.getItem("rg_local_os_itens")) {
+    localDB.set("os_itens", []);
+  }
 };
 
 initLocalData();
@@ -344,9 +351,10 @@ export const db = {
         }));
         localDB.set("orcamento_itens", [...currentItens, ...newItens]);
 
-        // Automação: se o orçamento for criado como Aprovado, gera lançamento financeiro
+        // Automação: se o orçamento for criado como Aprovado, gera lançamento financeiro e OS
         if (newOrcamento.status === "Aprovado") {
           await db.financeiro.triggerFromOrcamento(newOrcamento);
+          await db.ordem_servico.triggerFromOrcamento(newOrcamento);
         }
 
         return { data: { ...newOrcamento, itens: newItens }, error: null };
@@ -370,9 +378,10 @@ export const db = {
         const { error: err2 } = await supabase.from('orcamento_itens').insert(newItens);
         if (err2) throw err2;
 
-        // Automação: se o orçamento for criado como Aprovado, gera lançamento financeiro
+        // Automação: se o orçamento for criado como Aprovado, gera lançamento financeiro e OS
         if (newOrcamento.status === "Aprovado") {
           await db.financeiro.triggerFromOrcamento(newOrcamento);
+          await db.ordem_servico.triggerFromOrcamento(newOrcamento);
         }
 
         return { data: { ...newOrcamento, itens: newItens }, error: null };
@@ -388,6 +397,7 @@ export const db = {
         localDB.set("orcamento_itens", [...currentItens, ...newItens]);
         if (newOrc.status === "Aprovado") {
           await db.financeiro.triggerFromOrcamento(newOrc);
+          await db.ordem_servico.triggerFromOrcamento(newOrc);
         }
         return { data: { ...newOrc, itens: newItens }, error: null };
       }
@@ -405,9 +415,10 @@ export const db = {
         });
         localDB.set("orcamentos", updated);
 
-        // Se mudou para aprovado, disparar lançamento financeiro
+        // Se mudou para aprovado, disparar lançamento financeiro e OS
         if (status === "Aprovado" && updatedOrc) {
           await db.financeiro.triggerFromOrcamento(updatedOrc);
+          await db.ordem_servico.triggerFromOrcamento(updatedOrc);
         }
         return { error: null };
       }
@@ -420,6 +431,7 @@ export const db = {
           const { data: orc } = await supabase.from('orcamentos').select('*').eq('id', id).single();
           if (orc) {
             await db.financeiro.triggerFromOrcamento(orc);
+            await db.ordem_servico.triggerFromOrcamento(orc);
           }
         }
         return { error: null };
@@ -437,6 +449,7 @@ export const db = {
         localDB.set("orcamentos", updated);
         if (status === "Aprovado" && updatedOrc) {
           await db.financeiro.triggerFromOrcamento(updatedOrc);
+          await db.ordem_servico.triggerFromOrcamento(updatedOrc);
         }
         return { error: null };
       }
@@ -579,6 +592,512 @@ export const db = {
       } catch (err) {
         console.warn("Supabase erro, caindo para local storage:", err);
         return { data: localDB.get("orcamento_itens"), error: null };
+      }
+    }
+  },
+
+  // ── Ordem de Serviço ──
+  ordem_servico: {
+    list: async () => {
+      if (isOffline()) {
+        return { data: localDB.get("ordens_servico"), error: null };
+      }
+      try {
+        const { data, error } = await supabase.from('ordem_servico').select('*').order('criado_em', { ascending: false });
+        if (error) throw error;
+        return { data, error: null };
+      } catch (err) {
+        console.warn("Supabase erro, caindo para local storage:", err);
+        return { data: localDB.get("ordens_servico"), error: null };
+      }
+    },
+    get: async (id) => {
+      if (isOffline()) {
+        const os = localDB.get("ordens_servico").find(o => o.id === id);
+        const itens = localDB.get("os_itens").filter(oi => oi.os_id === id);
+        return { data: os ? { ...os, itens } : null, error: null };
+      }
+      try {
+        const { data: os, error: err1 } = await supabase.from('ordem_servico').select('*').eq('id', id).single();
+        if (err1) throw err1;
+        const { data: itens, error: err2 } = await supabase.from('os_itens').select('*').eq('os_id', id);
+        if (err2) throw err2;
+        return { data: { ...os, itens }, error: null };
+      } catch (err) {
+        console.warn("Supabase erro, caindo para local storage:", err);
+        const os = localDB.get("ordens_servico").find(o => o.id === id);
+        const itens = localDB.get("os_itens").filter(oi => oi.os_id === id);
+        return { data: os ? { ...os, itens } : null, error: null };
+      }
+    },
+    insert: async (os, itens) => {
+      if (isOffline()) {
+        const current = localDB.get("ordens_servico");
+        const newOS = { ...os, id: crypto.randomUUID(), criado_em: new Date().toISOString(), atualizado_em: new Date().toISOString() };
+        localDB.set("ordens_servico", [newOS, ...current]);
+
+        const currentItens = localDB.get("os_itens");
+        const newItens = itens.map(item => ({ ...item, id: crypto.randomUUID(), os_id: newOS.id }));
+        localDB.set("os_itens", [...currentItens, ...newItens]);
+
+        return { data: { ...newOS, itens: newItens }, error: null };
+      }
+      try {
+        const { data: newOS, error: err1 } = await supabase.from('ordem_servico').insert([os]).select();
+        if (err1) throw err1;
+        const mappedItens = itens.map(item => ({ ...item, os_id: newOS[0].id }));
+        const { data: newItens, error: err2 } = await supabase.from('os_itens').insert(mappedItens).select();
+        if (err2) throw err2;
+        return { data: { ...newOS[0], itens: newItens }, error: null };
+      } catch (err) {
+        console.warn("Supabase erro, caindo para local storage:", err);
+        const current = localDB.get("ordens_servico");
+        const newOS = { ...os, id: crypto.randomUUID(), criado_em: new Date().toISOString(), atualizado_em: new Date().toISOString() };
+        localDB.set("ordens_servico", [newOS, ...current]);
+        const currentItens = localDB.get("os_itens");
+        const newItens = itens.map(item => ({ ...item, id: crypto.randomUUID(), os_id: newOS.id }));
+        localDB.set("os_itens", [...currentItens, ...newItens]);
+        return { data: { ...newOS, itens: newItens }, error: null };
+      }
+    },
+    update: async (id, os) => {
+      if (isOffline()) {
+        const current = localDB.get("ordens_servico");
+        const updated = current.map(o => o.id === id ? { ...o, ...os, atualizado_em: new Date().toISOString() } : o);
+        localDB.set("ordens_servico", updated);
+        return { error: null };
+      }
+      try {
+        const { error } = await supabase.from('ordem_servico').update(os).eq('id', id);
+        if (error) throw error;
+        return { error: null };
+      } catch (err) {
+        console.warn("Supabase erro, caindo para local storage:", err);
+        const current = localDB.get("ordens_servico");
+        const updated = current.map(o => o.id === id ? { ...o, ...os, atualizado_em: new Date().toISOString() } : o);
+        localDB.set("ordens_servico", updated);
+        return { error: null };
+      }
+    },
+    updateStatus: async (id, status, motivo_cancelamento = null) => {
+      // 1. Obter a OS atual para ver o status anterior
+      let os = null;
+      let osItens = [];
+      if (isOffline()) {
+        os = localDB.get("ordens_servico").find(o => o.id === id);
+        osItens = localDB.get("os_itens").filter(oi => oi.os_id === id);
+      } else {
+        try {
+          const { data: dbOS } = await supabase.from('ordem_servico').select('*').eq('id', id).single();
+          os = dbOS;
+          const { data: dbItens } = await supabase.from('os_itens').select('*').eq('os_id', id);
+          osItens = dbItens || [];
+        } catch (e) {
+          os = localDB.get("ordens_servico").find(o => o.id === id);
+          osItens = localDB.get("os_itens").filter(oi => oi.os_id === id);
+        }
+      }
+
+      if (!os) return { error: "OS não encontrada" };
+      const statusAnterior = os.status;
+
+      // 2. Atualizar o status da OS
+      const updates = { 
+        status, 
+        atualizado_em: new Date().toISOString(),
+        motivo_cancelamento: status === "cancelado" ? motivo_cancelamento : os.motivo_cancelamento
+      };
+
+      if (status === "entregue") {
+        updates.data_entrega_real = new Date().toISOString().split('T')[0];
+      }
+
+      if (isOffline()) {
+        const currentOS = localDB.get("ordens_servico");
+        const updated = currentOS.map(o => o.id === id ? { ...o, ...updates } : o);
+        localDB.set("ordens_servico", updated);
+      } else {
+        try {
+          const { error } = await supabase.from('ordem_servico').update(updates).eq('id', id);
+          if (error) throw error;
+        } catch (e) {
+          const currentOS = localDB.get("ordens_servico");
+          const updated = currentOS.map(o => o.id === id ? { ...o, ...updates } : o);
+          localDB.set("ordens_servico", updated);
+        }
+      }
+
+      // GATILHO 2 — Baixa de estoque
+      const novoStatusBaixa = status === "em_execucao" || status === "entregue";
+      const anteriorStatusBaixa = statusAnterior === "em_execucao" || statusAnterior === "entregue";
+
+      if (novoStatusBaixa && !anteriorStatusBaixa) {
+        for (const item of osItens) {
+          if (item.tipo === "Peça" && item.item_catalogo_id) {
+            if (isOffline()) {
+              const produtos = localDB.get("produtos");
+              const updatedProds = produtos.map(p => {
+                if (p.id === item.item_catalogo_id) {
+                  return { ...p, estoque_atual: Math.max(0, (p.estoque_atual || 0) - item.quantidade) };
+                }
+                return p;
+              });
+              localDB.set("produtos", updatedProds);
+            } else {
+              try {
+                const { data: prod } = await supabase.from('produtos').select('estoque_atual').eq('id', item.item_catalogo_id).single();
+                if (prod) {
+                  const novaQtd = Math.max(0, (prod.estoque_atual || 0) - item.quantidade);
+                  await supabase.from('produtos').update({ estoque_atual: novaQtd }).eq('id', item.item_catalogo_id);
+                }
+              } catch (e) {
+                const produtos = localDB.get("produtos");
+                const updatedProds = produtos.map(p => {
+                  if (p.id === item.item_catalogo_id) {
+                    return { ...p, estoque_atual: Math.max(0, (p.estoque_atual || 0) - item.quantidade) };
+                  }
+                  return p;
+                });
+                localDB.set("produtos", updatedProds);
+              }
+            }
+          }
+        }
+      }
+
+      // GATILHO 3 — Alerta de peça em falta
+      if (status === "aguardando_peca") {
+        const alertas = localDB.get("alertas_estoque_os") || [];
+        const novosAlertas = [...alertas];
+        for (const item of osItens) {
+          if (item.tipo === "Peça" && item.item_catalogo_id) {
+            let estoque = 0;
+            if (isOffline()) {
+              const p = localDB.get("produtos").find(prod => prod.id === item.item_catalogo_id);
+              estoque = p ? p.estoque_atual : 0;
+            } else {
+              try {
+                const { data } = await supabase.from('produtos').select('estoque_atual').eq('id', item.item_catalogo_id).single();
+                estoque = data ? data.estoque_atual : 0;
+              } catch (e) {
+                const p = localDB.get("produtos").find(prod => prod.id === item.item_catalogo_id);
+                estoque = p ? p.estoque_atual : 0;
+              }
+            }
+
+            if (estoque < item.quantidade) {
+              const msg = `Peça em falta para a OS ${os.numero_os} (Necessário: ${item.quantidade}, Em Estoque: ${estoque})`;
+              if (!novosAlertas.some(a => a.os_id === id && a.item_id === item.item_catalogo_id)) {
+                novosAlertas.push({
+                  id: crypto.randomUUID(),
+                  os_id: id,
+                  numero_os: os.numero_os,
+                  item_id: item.item_catalogo_id,
+                  mensagem: msg,
+                  criado_em: new Date().toISOString()
+                });
+              }
+            }
+          }
+        }
+        localDB.set("alertas_estoque_os", novosAlertas);
+      }
+
+      // GATILHO 4 — Fechamento e garantia (Quando muda para entregue)
+      if (status === "entregue") {
+        const dataInicioStr = new Date().toISOString().split('T')[0];
+        
+        const updatedItens = osItens.map(item => {
+          const inicio = new Date();
+          const fim = new Date(inicio);
+          fim.setDate(fim.getDate() + (item.garantia_dias || 0));
+          return {
+            ...item,
+            data_inicio_garantia: dataInicioStr,
+            data_fim_garantia: fim.toISOString().split('T')[0],
+            status_garantia: 'ativa'
+          };
+        });
+
+        if (isOffline()) {
+          const currentItens = localDB.get("os_itens");
+          const mapping = currentItens.map(ci => {
+            const match = updatedItens.find(ui => ui.id === ci.id);
+            return match ? { ...ci, ...match } : ci;
+          });
+          localDB.set("os_itens", mapping);
+        } else {
+          try {
+            for (const ui of updatedItens) {
+              await supabase.from('os_itens').update({
+                data_inicio_garantia: ui.data_inicio_garantia,
+                data_fim_garantia: ui.data_fim_garantia,
+                status_garantia: 'ativa'
+              }).eq('id', ui.id);
+            }
+          } catch (e) {
+            const currentItens = localDB.get("os_itens");
+            const mapping = currentItens.map(ci => {
+              const match = updatedItens.find(ui => ui.id === ci.id);
+              return match ? { ...ci, ...match } : ci;
+            });
+            localDB.set("os_itens", mapping);
+          }
+        }
+
+        if (os.orcamento_id) {
+          if (isOffline()) {
+            const fin = localDB.get("financeiro");
+            const updatedFin = fin.map(f => {
+              if (f.orcamento_id === os.orcamento_id && f.meio_pagamento === "na retirada") {
+                return { ...f, status: "Pago", data_pagamento: dataInicioStr };
+              }
+              return f;
+            });
+            localDB.set("financeiro", updatedFin);
+          } else {
+            try {
+              const { data: finRec } = await supabase.from('financeiro').select('*').eq('orcamento_id', os.orcamento_id).single();
+              if (finRec && finRec.meio_pagamento === "na retirada") {
+                await supabase.from('financeiro').update({ status: "Pago", data_pagamento: dataInicioStr }).eq('id', finRec.id);
+              }
+            } catch (e) {
+              const fin = localDB.get("financeiro");
+              const updatedFin = fin.map(f => {
+                if (f.orcamento_id === os.orcamento_id && f.meio_pagamento === "na retirada") {
+                  return { ...f, status: "Pago", data_pagamento: dataInicioStr };
+                }
+                return f;
+              });
+              localDB.set("financeiro", updatedFin);
+            }
+          }
+        }
+
+        // GATILHO 5 — Histórico do cliente
+        if (os.cliente_id) {
+          let totalOrc = 0;
+          if (os.orcamento_id) {
+            if (isOffline()) {
+              const o = localDB.get("orcamentos").find(orc => orc.id === os.orcamento_id);
+              totalOrc = o ? Number(o.total) : 0;
+            } else {
+              try {
+                const { data } = await supabase.from('orcamentos').select('total').eq('id', os.orcamento_id).single();
+                totalOrc = data ? Number(data.total) : 0;
+              } catch (e) {
+                const o = localDB.get("orcamentos").find(orc => orc.id === os.orcamento_id);
+                totalOrc = o ? Number(o.total) : 0;
+              }
+            }
+          }
+
+          if (isOffline()) {
+            const clientes = localDB.get("clientes");
+            const updatedCli = clientes.map(c => {
+              if (c.id === os.cliente_id) {
+                return {
+                  ...c,
+                  total_os_concluidas: (c.total_os_concluidas || 0) + 1,
+                  ultimo_contato: dataInicioStr
+                };
+              }
+              return c;
+            });
+            localDB.set("clientes", updatedCli);
+          } else {
+            try {
+              await supabase.from('clientes').update({ ultimo_contato: dataInicioStr }).eq('id', os.cliente_id);
+            } catch (e) {
+              const clientes = localDB.get("clientes");
+              const updatedCli = clientes.map(c => {
+                if (c.id === os.cliente_id) {
+                  return {
+                    ...c,
+                    total_os_concluidas: (c.total_os_concluidas || 0) + 1,
+                    ultimo_contato: dataInicioStr
+                  };
+                }
+                return c;
+              });
+              localDB.set("clientes", updatedCli);
+            }
+          }
+        }
+      }
+
+      return { error: null };
+    },
+    triggerFromOrcamento: async (orcamento) => {
+      let exists = false;
+      if (isOffline()) {
+        exists = localDB.get("ordens_servico").some(os => os.orcamento_id === orcamento.id);
+      } else {
+        try {
+          const { data } = await supabase.from('ordem_servico').select('id').eq('orcamento_id', orcamento.id);
+          exists = data && data.length > 0;
+        } catch (e) {
+          exists = localDB.get("ordens_servico").some(os => os.orcamento_id === orcamento.id);
+        }
+      }
+
+      if (exists) return;
+
+      let orcItens = [];
+      if (isOffline()) {
+        orcItens = localDB.get("orcamento_itens").filter(oi => oi.orcamento_id === orcamento.id);
+      } else {
+        try {
+          const { data } = await supabase.from('orcamento_itens').select('*').eq('orcamento_id', orcamento.id);
+          orcItens = data || [];
+        } catch (e) {
+          orcItens = localDB.get("orcamento_itens").filter(oi => oi.orcamento_id === orcamento.id);
+        }
+      }
+
+      const year = new Date().getFullYear();
+      let count = 0;
+      if (isOffline()) {
+        count = localDB.get("ordens_servico").length;
+      } else {
+        try {
+          const { count: dbCount } = await supabase.from('ordem_servico').select('*', { count: 'exact', head: true });
+          count = dbCount || 0;
+        } catch (e) {
+          count = localDB.get("ordens_servico").length;
+        }
+      }
+      const numeroOs = `OS-${year}-${1000 + count + 1}`;
+
+      let prazoDias = 5;
+      if (orcamento.prazo_entrega) {
+        const parsed = parseInt(orcamento.prazo_entrega.replace(/\D/g, ""), 10);
+        if (!isNaN(parsed)) {
+          prazoDias = parsed;
+        }
+      }
+
+      const dataAberturaStr = new Date().toISOString().split('T')[0];
+      const dataAbertura = new Date();
+      const dataPrevistaDate = new Date(dataAbertura);
+      dataPrevistaDate.setDate(dataPrevistaDate.getDate() + prazoDias);
+      const dataPrevistaStr = dataPrevistaDate.toISOString().split('T')[0];
+
+      const novaOS = {
+        numero_os: numeroOs,
+        orcamento_id: orcamento.id,
+        cliente_id: orcamento.cliente_id,
+        status: 'recebido',
+        data_abertura: dataAberturaStr,
+        prazo_entrega_dias: prazoDias,
+        data_entrega_prevista: dataPrevistaStr,
+        equipamento_tipo: orcamento.eqp_tipo || "Equipamento",
+        equipamento_marca: orcamento.eqp_marca || "Genérica",
+        equipamento_modelo: orcamento.eqp_modelo || "",
+        equipamento_numero_serie: orcamento.eqp_serie || "",
+        acessorios_entregues: "",
+        tecnico_responsavel: "Técnico Padrão",
+        observacoes_internas: "Gerado automaticamente por aprovação de orçamento."
+      };
+
+      let insertedOS = null;
+      if (isOffline()) {
+        const currentOS = localDB.get("ordens_servico");
+        insertedOS = { ...novaOS, id: crypto.randomUUID(), criado_em: new Date().toISOString(), atualizado_em: new Date().toISOString() };
+        localDB.set("ordens_servico", [insertedOS, ...currentOS]);
+      } else {
+        try {
+          const { data, error } = await supabase.from('ordem_servico').insert([novaOS]).select();
+          if (error) throw error;
+          insertedOS = data[0];
+        } catch (e) {
+          const currentOS = localDB.get("ordens_servico");
+          insertedOS = { ...novaOS, id: crypto.randomUUID(), criado_em: new Date().toISOString(), atualizado_em: new Date().toISOString() };
+          localDB.set("ordens_servico", [insertedOS, ...currentOS]);
+        }
+      }
+
+      if (!insertedOS) return;
+
+      const osItens = orcItens.map(oi => {
+        let garantiaDias = 30;
+        if (oi.garantia) {
+          const valor = parseInt(oi.garantia.replace(/\D/g, ""), 10);
+          if (!isNaN(valor)) {
+            if (oi.garantia.toLowerCase().includes("ano")) {
+              garantiaDias = valor * 365;
+            } else if (oi.garantia.toLowerCase().includes("mês") || oi.garantia.toLowerCase().includes("mes")) {
+              garantiaDias = valor * 30;
+            } else {
+              garantiaDias = valor;
+            }
+          }
+        }
+
+        return {
+          os_id: insertedOS.id,
+          item_catalogo_id: oi.produto_id,
+          tipo: oi.tipo,
+          quantidade: oi.quantidade,
+          valor_unitario: Number(oi.valor_unitario),
+          garantia_dias: garantiaDias,
+          status_garantia: 'ativa'
+        };
+      });
+
+      if (isOffline()) {
+        const currentItems = localDB.get("os_itens");
+        const newItems = osItens.map(item => ({ ...item, id: crypto.randomUUID() }));
+        localDB.set("os_itens", [...currentItems, ...newItems]);
+      } else {
+        try {
+          const { error } = await supabase.from('os_itens').insert(osItens);
+          if (error) throw error;
+        } catch (e) {
+          const currentItems = localDB.get("os_itens");
+          const newItems = osItens.map(item => ({ ...item, id: crypto.randomUUID() }));
+          localDB.set("os_itens", [...currentItems, ...newItems]);
+        }
+      }
+    }
+  },
+
+  // ── Itens da OS ──
+  os_itens: {
+    insert: async (item) => {
+      if (isOffline()) {
+        const current = localDB.get("os_itens");
+        const newItem = { ...item, id: crypto.randomUUID() };
+        localDB.set("os_itens", [...current, newItem]);
+        return { data: newItem, error: null };
+      }
+      try {
+        const { data, error } = await supabase.from('os_itens').insert([item]).select();
+        if (error) throw error;
+        return { data: data[0], error: null };
+      } catch (err) {
+        console.warn("Supabase erro, caindo para local storage:", err);
+        const current = localDB.get("os_itens");
+        const newItem = { ...item, id: crypto.randomUUID() };
+        localDB.set("os_itens", [...current, newItem]);
+        return { data: newItem, error: null };
+      }
+    },
+    delete: async (id) => {
+      if (isOffline()) {
+        const current = localDB.get("os_itens");
+        localDB.set("os_itens", current.filter(oi => oi.id !== id));
+        return { error: null };
+      }
+      try {
+        const { error } = await supabase.from('os_itens').delete().eq('id', id);
+        if (error) throw error;
+        return { error: null };
+      } catch (err) {
+        console.warn("Supabase erro, caindo para local storage:", err);
+        const current = localDB.get("os_itens");
+        localDB.set("os_itens", current.filter(oi => oi.id !== id));
+        return { error: null };
       }
     }
   }
