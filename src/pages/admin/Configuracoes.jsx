@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Settings, Target, Bell, Calendar, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { db } from "../../services/supabase";
 
 export default function Configuracoes() {
   const [configs, setConfigs] = useState({
@@ -23,6 +24,41 @@ export default function Configuracoes() {
   const [novaCatServico, setNovaCatServico] = useState("");
   const [novaCatPeca, setNovaCatPeca] = useState("");
   const [novaSubcat, setNovaSubcat] = useState("");
+
+  // Estados de Contas Bancárias
+  const [bancos, setBancos] = useState([]);
+  const [novoBanco, setNovoBanco] = useState("");
+
+  const loadBancos = async () => {
+    try {
+      const { data } = await db.bancos.list();
+      setBancos(data || []);
+    } catch (e) {
+      console.error("Erro ao carregar bancos:", e);
+    }
+  };
+
+  const handleAddBanco = async () => {
+    if (!novoBanco.trim()) return;
+    const name = novoBanco.trim();
+    if (bancos.some(b => b.nome.toLowerCase() === name.toLowerCase())) {
+      alert("Banco já cadastrado!");
+      return;
+    }
+    await db.bancos.insert({ nome: name });
+    setNovoBanco("");
+    loadBancos();
+    setSuccessMsg(`Banco "${name}" adicionado com sucesso!`);
+    setTimeout(() => setSuccessMsg(""), 3000);
+  };
+
+  const handleRemoveBanco = async (id, nome) => {
+    if (!window.confirm(`Deseja remover o banco "${nome}"? Isso apenas removerá a opção de futuras seleções, sem afetar o histórico financeiro.`)) return;
+    await db.bancos.delete(id);
+    loadBancos();
+    setSuccessMsg("Banco removido com sucesso!");
+    setTimeout(() => setSuccessMsg(""), 3000);
+  };
 
   useEffect(() => {
     const stored = localStorage.getItem("rg_local_configuracoes");
@@ -61,6 +97,7 @@ export default function Configuracoes() {
     
     setCategorias(catsStored ? JSON.parse(catsStored) : defaultCats);
     setSubcategorias(subcatsStored ? JSON.parse(subcatsStored) : defaultSubcats);
+    loadBancos();
   }, []);
 
   const handleAddCat = (tipo, val) => {
@@ -424,6 +461,53 @@ export default function Configuracoes() {
             </div>
           </div>
         </div>
+
+        {/* Gestão de Contas Bancárias */}
+        <div className="glass p-6 rounded-2xl shadow-xl space-y-6">
+          <div className="flex items-center gap-2.5 border-b border-white/5 pb-4">
+            <Settings className="text-[#4A47FF]" size={20} />
+            <h3 className="font-bold text-white text-base">Contas Bancárias / Bancos de Destino</h3>
+          </div>
+
+          <div className="max-w-md space-y-4">
+            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Bancos Cadastrados</h4>
+            <div className="flex gap-2">
+              <input 
+                type="text"
+                placeholder="Ex: C6, Banco do Brasil..."
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none"
+                value={novoBanco}
+                onChange={(e) => setNovoBanco(e.target.value)}
+              />
+              <button 
+                type="button"
+                onClick={handleAddBanco}
+                className="bg-[#2D2B7A] hover:bg-[#4A47FF] px-3 py-2 rounded-xl text-xs font-bold text-white transition-all whitespace-nowrap"
+              >
+                Adicionar Banco
+              </button>
+            </div>
+            <div className="max-h-60 overflow-y-auto bg-white/2 rounded-xl border border-white/5 divide-y divide-white/5">
+              {bancos.length === 0 ? (
+                <div className="p-4 text-xs text-slate-500 text-center">Nenhum banco cadastrado.</div>
+              ) : (
+                bancos.map(b => (
+                  <div key={b.id} className="flex justify-between items-center px-4 py-3">
+                    <span className="text-xs text-white font-semibold">{b.nome}</span>
+                    <button 
+                      type="button"
+                      onClick={() => handleRemoveBanco(b.id, b.nome)}
+                      className="text-red-500 hover:text-red-400 p-1 rounded hover:bg-white/5 transition-all"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );

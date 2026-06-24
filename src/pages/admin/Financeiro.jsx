@@ -25,6 +25,7 @@ const getMonthBounds = (offset = 0) => {
 export default function Financeiro() {
   const [financeiro, setFinanceiro] = useState([]);
   const [clientes, setClientes] = useState([]);
+  const [bancos, setBancos] = useState([]);
   const [search, setSearch] = useState("");
   const [filterTipo, setFilterTipo] = useState("Todos");
   const [filterStatus, setFilterStatus] = useState("Todos");
@@ -151,12 +152,14 @@ export default function Financeiro() {
     try {
       const { data: finData } = await db.financeiro.list();
       const { data: cliData } = await db.clientes.list();
+      const { data: bancoData } = await db.bancos.list();
       
       const activeFinData = finData || [];
       const updatedFin = await processAutoRecurring(activeFinData);
       
       setFinanceiro(updatedFin);
       setClientes(cliData || []);
+      setBancos(bancoData || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -177,7 +180,7 @@ export default function Financeiro() {
     setStatus("Pendente");
     setDataVencimento(new Date().toISOString().split("T")[0]);
     setDataPagamento("");
-    setBanco("Nubank");
+    setBanco(bancos[0]?.nome || "");
     setMeioPagamento("PIX");
     setValorPix(0);
     setValorCartao(0);
@@ -198,7 +201,7 @@ export default function Financeiro() {
     setStatus(f.status || "Pendente");
     setDataVencimento(f.data_vencimento || new Date().toISOString().split("T")[0]);
     setDataPagamento(f.data_pagamento || "");
-    setBanco(f.banco || "Nubank");
+    setBanco(f.banco || bancos[0]?.nome || "");
     setMeioPagamento(f.meio_pagamento || "PIX");
     setValorPix(Number(f.valor_pix || 0));
     setValorCartao(Number(f.valor_cartao || 0));
@@ -261,7 +264,7 @@ export default function Financeiro() {
   const handleOpenConciliation = (item) => {
     setConciliatingItem(item);
     setDataPagamento(new Date().toISOString().split("T")[0]);
-    setBanco("Nubank");
+    setBanco(bancos[0]?.nome || "");
     setMeioPagamento("PIX");
     setValorPix(Number(item.valor));
     setValorCartao(0);
@@ -867,10 +870,10 @@ export default function Financeiro() {
                       value={banco}
                       onChange={(e) => setBanco(e.target.value)}
                     >
-                      <option value="Nubank">Nubank (RG TECH)</option>
-                      <option value="Sicredi">Sicredi (Conta Empresa)</option>
-                      <option value="Caixa">Caixa Econômica</option>
-                      <option value="Outros">Outros</option>
+                      <option value="">-- Selecione o Banco --</option>
+                      {bancos.map(b => (
+                        <option key={b.id} value={b.nome}>{b.nome}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -983,10 +986,10 @@ export default function Financeiro() {
                     value={banco}
                     onChange={(e) => setBanco(e.target.value)}
                   >
-                    <option value="Nubank">Nubank (RG TECH)</option>
-                    <option value="Sicredi">Sicredi (Conta Empresa)</option>
-                    <option value="Caixa">Caixa Econômica</option>
-                    <option value="Outros">Outros</option>
+                    <option value="">-- Selecione o Banco --</option>
+                    {bancos.map(b => (
+                      <option key={b.id} value={b.nome}>{b.nome}</option>
+                    ))}
                   </select>
                 </div>
               </div>

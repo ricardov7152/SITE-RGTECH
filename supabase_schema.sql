@@ -191,4 +191,17 @@ CREATE POLICY "Permitir tudo autenticado (Financeiro)" ON public.financeiro FOR 
 CREATE POLICY "Permitir tudo autenticado (Ordem Servico)" ON public.ordem_servico FOR ALL TO authenticated USING (true);
 CREATE POLICY "Permitir tudo autenticado (OS Itens)" ON public.os_itens FOR ALL TO authenticated USING (true);
 
+-- 8. Tabela de Bancos / Contas Bancárias (Dinâmica)
+CREATE TABLE IF NOT EXISTS public.bancos (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nome TEXT UNIQUE NOT NULL,
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE public.bancos ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Permitir tudo autenticado (Bancos)" ON public.bancos;
+CREATE POLICY "Permitir tudo autenticado (Bancos)" ON public.bancos FOR ALL TO authenticated USING (true);
+
+
 

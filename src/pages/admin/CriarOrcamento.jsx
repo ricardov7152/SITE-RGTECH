@@ -14,6 +14,11 @@ export default function CriarOrcamento() {
   const [clientes, setClientes] = useState([]);
   const [produtosCatalogo, setProdutosCatalogo] = useState([]);
 
+  // Estados de busca de cliente
+  const [clientSearch, setClientSearch] = useState("");
+  const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
+  const clientDropdownRef = useRef(null);
+
   // Estados do Formulário
   const [clienteId, setClienteId] = useState("");
   const [equipamento, setEquipamento] = useState({ tipo: "", marca: "", modelo: "", serie: "" });
@@ -33,6 +38,25 @@ export default function CriarOrcamento() {
   const [orcamentoNumero, setOrcamentoNumero] = useState("");
   const [dataEmissao, setDataEmissao] = useState(new Date().toISOString().split("T")[0]);
 
+  // Fechar dropdown de cliente ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (clientDropdownRef.current && !clientDropdownRef.current.contains(event.target)) {
+        setIsClientDropdownOpen(false);
+        if (clienteId) {
+          const selected = clientes.find(c => c.id === clienteId);
+          if (selected) {
+            setClientSearch(selected.nome_completo);
+          }
+        } else {
+          setClientSearch("");
+        }
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [clienteId, clientes]);
+
   // Carregar dados iniciais
   useEffect(() => {
     async function loadData() {
@@ -49,6 +73,10 @@ export default function CriarOrcamento() {
           if (orc) {
             setOrcamentoNumero(orc.id);
             setClienteId(orc.cliente_id || "");
+            const selected = cliData.find(c => c.id === orc.cliente_id);
+            if (selected) {
+              setClientSearch(selected.nome_completo);
+            }
             setEquipamento({
               tipo: orc.eqp_tipo || "",
               marca: orc.eqp_marca || "",
@@ -209,6 +237,13 @@ export default function CriarOrcamento() {
 
   const selectedClient = clientes.find(c => c.id === clienteId);
 
+  const filteredClientes = clientes.filter(c => {
+    const term = clientSearch.toLowerCase();
+    const nome = c.nome_completo.toLowerCase();
+    const doc = (c.cpf_cnpj || "").toLowerCase();
+    return nome.includes(term) || doc.includes(term);
+  });
+
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
       {/* ── HEADER DE AÇÕES DO FORMULÁRIO ── */}
@@ -250,21 +285,45 @@ export default function CriarOrcamento() {
           {/* Card Cliente */}
           <div className="glass p-6 rounded-2xl shadow-xl space-y-4">
             <h3 className="font-bold text-white text-base border-b border-white/5 pb-2">Identificação do Cliente</h3>
-            <div>
+            <div className="relative" ref={clientDropdownRef}>
               <label className="block text-xs font-semibold text-slate-400 mb-1">Selecionar Cliente *</label>
-              <select 
-                required
+              <input
+                type="text"
+                placeholder="Digite o nome ou CPF/CNPJ para buscar..."
                 className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
-                value={clienteId}
-                onChange={(e) => setClienteId(e.target.value)}
-              >
-                <option value="">-- Selecione o Cliente --</option>
-                {clientes.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome_completo} ({c.tipo_pessoa}) {c.cpf_cnpj ? `- ${c.cpf_cnpj}` : ""}
-                  </option>
-                ))}
-              </select>
+                value={clientSearch}
+                onFocus={() => setIsClientDropdownOpen(true)}
+                onChange={(e) => {
+                  setClientSearch(e.target.value);
+                  setIsClientDropdownOpen(true);
+                  if (!e.target.value) {
+                    setClienteId("");
+                  }
+                }}
+              />
+              {isClientDropdownOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-[#121212] border border-white/10 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
+                  {filteredClientes.length === 0 ? (
+                    <div className="p-3 text-xs text-slate-500 text-center">Nenhum cliente encontrado</div>
+                  ) : (
+                    filteredClientes.map(c => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="w-full text-left px-4 py-3 text-xs hover:bg-[#2D2B7A] hover:text-white border-b border-white/5 last:border-0 text-slate-300 transition-all flex justify-between items-center"
+                        onClick={() => {
+                          setClienteId(c.id);
+                          setClientSearch(c.nome_completo);
+                          setIsClientDropdownOpen(false);
+                        }}
+                      >
+                        <span>{c.nome_completo} ({c.tipo_pessoa})</span>
+                        <span className="text-slate-500 text-[10px]">{c.cpf_cnpj || ""}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
 
             {selectedClient && (
@@ -293,20 +352,32 @@ export default function CriarOrcamento() {
                 <input 
                   type="text" 
                   placeholder="Notebook"
+                  list="tipos-equipamento"
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
                   value={equipamento.tipo}
                   onChange={(e) => setEquipamento({ ...equipamento, tipo: e.target.value })}
                 />
+                <datalist id="tipos-equipamento">
+                  {["Desktop", "Desktop Gamer", "Notebook", "Notebook Gamer", "All In One", "Monitor", "Tablets", "HD", "SSD SATA", "SSD M2", "Fonte de Alimentação", "Periféricos", "PS5", "PS5 SLIM", "PS5 PRO", "XBOX", "XBOX ONE", "XBOX 360", "XBOX SERIES S"].map(t => (
+                    <option key={t} value={t} />
+                  ))}
+                </datalist>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Marca</label>
                 <input 
                   type="text" 
                   placeholder="Dell"
+                  list="marcas-equipamento"
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
                   value={equipamento.marca}
                   onChange={(e) => setEquipamento({ ...equipamento, marca: e.target.value })}
                 />
+                <datalist id="marcas-equipamento">
+                  {["Dell", "HP", "Lenovo", "Asus", "Acer", "Apple", "Samsung", "Positivo", "Multilaser", "MSI", "Gigabyte", "Vaio", "LG", "Toshiba", "Mancer", "Pichau", "Rise Mode"].map(m => (
+                    <option key={m} value={m} />
+                  ))}
+                </datalist>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Modelo</label>

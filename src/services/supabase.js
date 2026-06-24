@@ -35,16 +35,6 @@ const localDB = {
 
 // Massa de dados inicial padrão caso o local esteja vazio
 const initLocalData = () => {
-  const currentFin = localStorage.getItem("rg_local_financeiro");
-  if (currentFin && !currentFin.includes("f3")) {
-    localStorage.removeItem("rg_local_financeiro");
-  }
-
-  const currentProd = localStorage.getItem("rg_local_produtos");
-  if (currentProd && !currentProd.includes("preco_custo")) {
-    localStorage.removeItem("rg_local_produtos");
-  }
-
   if (!localStorage.getItem("rg_local_produtos")) {
     localDB.set("produtos", [
       { id: "p1", nome: "Formatação com Instalação Padrão", tipo: "Serviço", preco: 120.00, preco_custo: 0.00, estoque_atual: 0, status_item: "Ativo", garantia_valor: 30, garantia_unidade: "Dias", garantia: "30 Dias", categoria: "Serviços", subcategoria: "Software", descricao: "Instalação de Windows e programas essenciais." },
@@ -107,21 +97,7 @@ const initLocalData = () => {
     ]);
   }
   if (!localStorage.getItem("rg_local_financeiro")) {
-    const getFutureDateString = (days) => {
-      const d = new Date();
-      d.setDate(d.getDate() + days);
-      return d.toISOString().split("T")[0];
-    };
-
-    localDB.set("financeiro", [
-      { id: "f1", created_at: new Date().toISOString(), tipo: "Receita", categoria: "Orçamento", descricao: "Orçamento Aprovado ORC-2026-1001 - Ricardo Bertollo", valor: 350.00, status: "Pago", cliente_id: "c1", orcamento_id: "ORC-2026-1001", data_vencimento: "2026-06-02", data_pagamento: "2026-06-02", banco: "Nubank", meio_pagamento: "PIX", valor_pix: 350.00, valor_cartao: 0.00, valor_dinheiro: 0.00, desconto: 20.00, observacoes: "Lançamento automático de aprovação." },
-      { id: "f2", created_at: new Date().toISOString(), tipo: "Despesa", categoria: "Marketing", descricao: "Anúncios no Instagram", valor: 100.00, status: "Pago", data_vencimento: "2026-06-01", data_pagamento: "2026-06-01", banco: "Nubank", meio_pagamento: "PIX", valor_pix: 100.00 },
-      // Lançamentos pendentes futuros para demonstrar a Projeção (Fluxo de Caixa Projetado)
-      { id: "f3", created_at: new Date().toISOString(), tipo: "Receita", categoria: "Orçamento", descricao: "Orçamento Futuro Projetado - Ricardo Bertollo", valor: 500.00, status: "Pendente", cliente_id: "c1", data_vencimento: getFutureDateString(5) },
-      { id: "f4", created_at: new Date().toISOString(), tipo: "Receita", categoria: "Orçamento", descricao: "Manutenção Projetada - Paiol Agrícola", valor: 1200.00, status: "Pendente", cliente_id: "c2", data_vencimento: getFutureDateString(12) },
-      { id: "f5", created_at: new Date().toISOString(), tipo: "Despesa", categoria: "Peças", descricao: "Compra de Componentes Importados", valor: 300.00, status: "Pendente", data_vencimento: getFutureDateString(6) },
-      { id: "f6", created_at: new Date().toISOString(), tipo: "Despesa", categoria: "Aluguel", descricao: "Aluguel Mensal - Ponto Comercial", valor: 1500.00, status: "Pendente", data_vencimento: getFutureDateString(20), recorrente: true, frequencia: "Mensal" }
-    ]);
+    localDB.set("financeiro", []);
   }
 
   if (!localStorage.getItem("rg_local_categorias_produtos")) {
@@ -142,6 +118,14 @@ const initLocalData = () => {
   }
   if (!localStorage.getItem("rg_local_os_itens")) {
     localDB.set("os_itens", []);
+  }
+  if (!localStorage.getItem("rg_local_bancos")) {
+    localDB.set("bancos", [
+      { id: "b1", nome: "C6", criado_em: new Date().toISOString() },
+      { id: "b2", nome: "Sicredi", criado_em: new Date().toISOString() },
+      { id: "b3", nome: "Infinetepay", criado_em: new Date().toISOString() },
+      { id: "b4", nome: "Genial", criado_em: new Date().toISOString() }
+    ]);
   }
 };
 
@@ -1097,6 +1081,58 @@ export const db = {
         console.warn("Supabase erro, caindo para local storage:", err);
         const current = localDB.get("os_itens");
         localDB.set("os_itens", current.filter(oi => oi.id !== id));
+        return { error: null };
+      }
+    }
+  },
+  // ── Bancos ──
+  bancos: {
+    list: async () => {
+      if (isOffline()) {
+        return { data: localDB.get("bancos"), error: null };
+      }
+      try {
+        const { data, error } = await supabase.from('bancos').select('*').order('nome');
+        if (error) throw error;
+        return { data, error: null };
+      } catch (err) {
+        console.warn("Supabase erro, caindo para local storage:", err);
+        return { data: localDB.get("bancos"), error: null };
+      }
+    },
+    insert: async (banco) => {
+      if (isOffline()) {
+        const current = localDB.get("bancos");
+        const newBanco = { ...banco, id: crypto.randomUUID(), criado_em: new Date().toISOString() };
+        localDB.set("bancos", [...current, newBanco]);
+        return { data: newBanco, error: null };
+      }
+      try {
+        const { data, error } = await supabase.from('bancos').insert([banco]).select();
+        if (error) throw error;
+        return { data: data[0], error: null };
+      } catch (err) {
+        console.warn("Supabase erro, caindo para local storage:", err);
+        const current = localDB.get("bancos");
+        const newBanco = { ...banco, id: crypto.randomUUID(), criado_em: new Date().toISOString() };
+        localDB.set("bancos", [...current, newBanco]);
+        return { data: newBanco, error: null };
+      }
+    },
+    delete: async (id) => {
+      if (isOffline()) {
+        const current = localDB.get("bancos");
+        localDB.set("bancos", current.filter(b => b.id !== id));
+        return { error: null };
+      }
+      try {
+        const { error } = await supabase.from('bancos').delete().eq('id', id);
+        if (error) throw error;
+        return { error: null };
+      } catch (err) {
+        console.warn("Supabase erro, caindo para local storage:", err);
+        const current = localDB.get("bancos");
+        localDB.set("bancos", current.filter(b => b.id !== id));
         return { error: null };
       }
     }

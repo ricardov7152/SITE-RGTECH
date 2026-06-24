@@ -81,6 +81,12 @@ export default function Dashboard() {
       }
     }
     loadData();
+
+    const interval = setInterval(() => {
+      loadData();
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleSaveMeta = () => {
