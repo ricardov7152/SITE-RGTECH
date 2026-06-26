@@ -22,15 +22,6 @@ export default function Login() {
       });
 
       if (error) {
-        // Se a API retornar erro, checa se corresponde à credencial de administrador local
-        const passHashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password));
-        const passHashHex = Array.from(new Uint8Array(passHashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
-        
-        if (email === "ricardov714464@gmail.com" && passHashHex === "fe795548cf9ac37223585d84a6bbd28ad5b3bcab2331950db83c02f39600c7ec") {
-          localStorage.setItem("rgtech_session", JSON.stringify({ user: { email }, expires_at: Date.now() + 3600000 }));
-          navigate("/admin/dashboard");
-          return;
-        }
         throw error;
       }
 
@@ -39,21 +30,6 @@ export default function Login() {
       }
     } catch (err) {
       console.error("Erro no login:", err);
-      
-      // Fallback para login offline seguro caso não haja conexão com a rede
-      try {
-        const passHashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password));
-        const passHashHex = Array.from(new Uint8Array(passHashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
-        
-        if (email === "ricardov714464@gmail.com" && passHashHex === "fe795548cf9ac37223585d84a6bbd28ad5b3bcab2331950db83c02f39600c7ec") {
-          localStorage.setItem("rgtech_session", JSON.stringify({ user: { email }, expires_at: Date.now() + 3600000 }));
-          navigate("/admin/dashboard");
-          return;
-        }
-      } catch (e) {
-        console.error(e);
-      }
-
       setErrorMsg(err.message || "Erro desconhecido. Verifique suas credenciais.");
     } finally {
       setLoading(false);

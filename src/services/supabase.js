@@ -8,9 +8,9 @@ export const supabase = createClient(
   supabaseAnonKey || 'placeholder'
 );
 
-// Auxiliar para detectar se estamos rodando no modo offline (Dev Bypass)
+// Auxiliar para detectar se estamos rodando no modo offline (Dev Bypass) - Desabilitado
 const isOffline = () => {
-  return localStorage.getItem("rgtech_session") !== null || !supabaseUrl || supabaseUrl.includes("placeholder");
+  return false;
 };
 
 // --- BANCO DE DADOS LOCAL FALLBACK (LocalStorage) ---
