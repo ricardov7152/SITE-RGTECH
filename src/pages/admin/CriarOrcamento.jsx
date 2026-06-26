@@ -283,7 +283,7 @@ export default function CriarOrcamento() {
         {/* COLUNA ESQUERDA: CLIENTE, MAQUINA E DEFEITO */}
         <div className="space-y-6">
           {/* Card Cliente */}
-          <div className="glass p-6 rounded-2xl shadow-xl space-y-4">
+          <div className="glass p-6 rounded-2xl shadow-xl space-y-4 relative z-20">
             <h3 className="font-bold text-white text-base border-b border-white/5 pb-2">Identificação do Cliente</h3>
             <div className="relative" ref={clientDropdownRef}>
               <label className="block text-xs font-semibold text-slate-400 mb-1">Selecionar Cliente *</label>
