@@ -175,12 +175,25 @@ ALTER TABLE public.os_itens ENABLE ROW LEVEL SECURITY;
 
 -- Remover políticas existentes para evitar erros ao rodar o script novamente
 DROP POLICY IF EXISTS "Permitir tudo anon (Clientes)" ON public.clientes;
+DROP POLICY IF EXISTS "Permitir tudo autenticado (Clientes)" ON public.clientes;
+
 DROP POLICY IF EXISTS "Permitir tudo anon (Produtos)" ON public.produtos;
+DROP POLICY IF EXISTS "Permitir tudo autenticado (Produtos)" ON public.produtos;
+
 DROP POLICY IF EXISTS "Permitir tudo anon (Orçamentos)" ON public.orcamentos;
+DROP POLICY IF EXISTS "Permitir tudo autenticado (Orçamentos)" ON public.orcamentos;
+
 DROP POLICY IF EXISTS "Permitir tudo anon (Itens)" ON public.orcamento_itens;
+DROP POLICY IF EXISTS "Permitir tudo autenticado (Itens)" ON public.orcamento_itens;
+
 DROP POLICY IF EXISTS "Permitir tudo anon (Financeiro)" ON public.financeiro;
+DROP POLICY IF EXISTS "Permitir tudo autenticado (Financeiro)" ON public.financeiro;
+
 DROP POLICY IF EXISTS "Permitir tudo anon (Ordem Servico)" ON public.ordem_servico;
+DROP POLICY IF EXISTS "Permitir tudo autenticado (Ordem Servico)" ON public.ordem_servico;
+
 DROP POLICY IF EXISTS "Permitir tudo anon (OS Itens)" ON public.os_itens;
+DROP POLICY IF EXISTS "Permitir tudo autenticado (OS Itens)" ON public.os_itens;
 
 -- Políticas de acesso restrito (somente usuários autenticados via login)
 CREATE POLICY "Permitir tudo autenticado (Clientes)" ON public.clientes FOR ALL TO authenticated USING (true);
