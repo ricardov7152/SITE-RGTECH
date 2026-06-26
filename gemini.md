@@ -6,6 +6,7 @@
 3. **Design Coeso e Premium:** A área administrativa/ERP deve compartilhar da mesma identidade visual moderna e escura (dark mode, tons de roxo/azul e preto, glassmorphism) do site institucional da RG TECH.
 4. **Segurança por Padrão:** Toda chamada ao banco e telas de gerenciamento devem exigir login via Supabase Auth (e-mail/senha).
 5. **Automação de Fluxo:** Aprovou orçamento -> Gera lançamento financeiro "a conferir" (status: Pendente) automaticamente.
+6. **Conexão 100% Online Exclusiva (Sem Modo Offline):** É terminantemente proibido projetar, programar ou manter qualquer "Modo de Contingência Local", "Offline Fallback" ou "Dev Bypass" utilizando LocalStorage/session para simular dados do banco. Toda e qualquer funcionalidade desenvolvida deve operar em tempo real, conectada diretamente ao Supabase (Auth e Database), tratando eventuais erros de rede ou permissão de forma transparente na interface para que o usuário saiba imediatamente o estado real da conexão.
 
 ## 🏗️ Invariantes Arquiteturais
 * **Frontend:** Single Page Application (SPA) com React 19 + Vite 8.
