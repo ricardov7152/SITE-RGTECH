@@ -527,7 +527,7 @@ export default function CriarOrcamento() {
                 <span>R$ {subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-400">Desconto Comercial (R$):</span>
+                <span className="text-slate-400">Desconto (R$):</span>
                 <input 
                   type="number" 
                   step="0.01"
@@ -626,70 +626,73 @@ export default function CriarOrcamento() {
 
       {/* ── TEMPLATE DO PDF OMITIDO NA TELA (Apenas para html2pdf) ── */}
       <div style={{ position: "absolute", top: "-9999px", left: "-9999px", width: "794px", backgroundColor: "#fff", color: "#000" }}>
-        <div ref={pdfRef} style={{ padding: "25px 35px", fontFamily: "Arial, sans-serif", fontSize: "12px", lineHeight: "1.5", color: "#333" }}>
+        <div ref={pdfRef} style={{ padding: "30px 40px", fontFamily: "Arial, sans-serif", fontSize: "11.5px", lineHeight: "1.6", color: "#333" }}>
+          
           {/* Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #2d2b7a", paddingBottom: "10px", marginBottom: "20px" }}>
-            <img src="/logo.png" alt="RG TECH" style={{ maxHeight: "120px", maxWidth: "250px", objectFit: "contain" }} />
-            <div style={{ textAlign: "right" }}>
-              <h2 style={{ margin: 0, color: "#2d2b7a", fontSize: "18px" }}>RG TECH Computadores</h2>
-              <p style={{ margin: "2px 0 0 0" }}>WhatsApp: (66) 9 9929-8666</p>
-              <p style={{ margin: "1px 0 0 0" }}>E-mail: rgtechpc@gmail.com</p>
-              <p style={{ margin: "1px 0 0 0" }}>Sorriso - Mato Grosso</p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #0029F5", paddingBottom: "12px", marginBottom: "20px" }}>
+            <img src="/logo_dark.png" alt="RG TECH" style={{ maxHeight: "75px", maxWidth: "220px", objectFit: "contain" }} />
+            <div style={{ textAlign: "right", fontSize: "11px" }}>
+              <h2 style={{ margin: 0, color: "#0029F5", fontSize: "16px", fontWeight: "bold" }}>RG TECH Computadores</h2>
+              <p style={{ margin: "3px 0 0 0", color: "#555" }}>⚡ Soluções Inteligentes em TI</p>
+              <p style={{ margin: "2px 0 0 0" }}><strong>WhatsApp:</strong> (66) 9 9929-8666</p>
+              <p style={{ margin: "1px 0 0 0" }}><strong>E-mail:</strong> rgtechpc@gmail.com</p>
             </div>
           </div>
 
           {/* Título */}
           <div style={{ textAlign: "center", marginBottom: "20px" }}>
-            <h1 style={{ margin: 0, fontSize: "18px", color: "#2d2b7a", textTransform: "uppercase" }}>Orçamento - #{orcamentoNumero}</h1>
-            <p style={{ margin: "3px 0 0 0", color: "#666" }}>Data de Emissão: {format(new Date(dataEmissao + "T00:00:00"), "dd/MM/yyyy")}</p>
+            <h1 style={{ margin: 0, fontSize: "18px", color: "#0029F5", textTransform: "uppercase", letterSpacing: "1px" }}>Orçamento de Serviços</h1>
+            <p style={{ margin: "4px 0 0 0", color: "#666", fontSize: "12px" }}>
+              <strong>Nº Proposta:</strong> #{orcamentoNumero} | <strong>Emissão:</strong> {format(new Date(dataEmissao + "T00:00:00"), "dd/MM/yyyy")}
+            </p>
           </div>
 
           {/* Dados do Cliente e Equipamento */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginBottom: "20px" }}>
-            <div style={{ backgroundColor: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}>
-              <h3 style={{ margin: "0 0 6px 0", fontSize: "13px", color: "#2d2b7a", borderBottom: "1px solid #cbd5e1", paddingBottom: "3px" }}>Dados do Cliente</h3>
-              <p style={{ margin: "0 0 3px 0" }}><strong>Nome/Razão Social:</strong> {selectedClient?.nome_completo || "Não cadastrado"}</p>
+            <div style={{ backgroundColor: "#f8fafc", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+              <h3 style={{ margin: "0 0 6px 0", fontSize: "12px", color: "#0029F5", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px", fontWeight: "bold" }}>Dados do Cliente</h3>
+              <p style={{ margin: "0 0 4px 0" }}><strong>Nome/Razão Social:</strong> {selectedClient?.nome_completo || "Não cadastrado"}</p>
               {selectedClient?.tipo_pessoa === "PJ" ? (
                 <>
-                  <p style={{ margin: "0 0 3px 0" }}><strong>CNPJ:</strong> {selectedClient.cpf_cnpj}</p>
-                  <p style={{ margin: "0 0 3px 0" }}><strong>Insc. Estadual:</strong> {selectedClient.inscricao_estadual || "Isento"}</p>
-                  <p style={{ margin: "0 0 3px 0" }}><strong>Contato:</strong> {selectedClient.nome_responsavel}</p>
+                  <p style={{ margin: "0 0 4px 0" }}><strong>CNPJ:</strong> {selectedClient.cpf_cnpj}</p>
+                  <p style={{ margin: "0 0 4px 0" }}><strong>Insc. Estadual:</strong> {selectedClient.inscricao_estadual || "Isento"}</p>
+                  <p style={{ margin: "0 0 4px 0" }}><strong>Contato:</strong> {selectedClient.nome_responsavel}</p>
                 </>
               ) : (
-                <p style={{ margin: "0 0 3px 0" }}><strong>CPF:</strong> {selectedClient?.cpf_cnpj || "N/A"}</p>
+                <p style={{ margin: "0 0 4px 0" }}><strong>CPF:</strong> {selectedClient?.cpf_cnpj || "N/A"}</p>
               )}
-              <p style={{ margin: "0 0 3px 0" }}><strong>WhatsApp:</strong> {selectedClient?.telefone}</p>
+              <p style={{ margin: "0 0 4px 0" }}><strong>WhatsApp:</strong> {selectedClient?.telefone}</p>
               <p style={{ margin: "0 0 0 0" }}><strong>E-mail:</strong> {selectedClient?.email}</p>
             </div>
-            <div style={{ backgroundColor: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}>
-              <h3 style={{ margin: "0 0 6px 0", fontSize: "13px", color: "#2d2b7a", borderBottom: "1px solid #cbd5e1", paddingBottom: "3px" }}>Equipamento / Defeito</h3>
-              <p style={{ margin: "0 0 3px 0" }}><strong>Tipo:</strong> {equipamento.tipo || "N/A"}</p>
-              <p style={{ margin: "0 0 3px 0" }}><strong>Marca/Modelo:</strong> {equipamento.marca} {equipamento.modelo}</p>
-              <p style={{ margin: "0 0 3px 0" }}><strong>Nº de Série:</strong> {equipamento.serie || "N/A"}</p>
-              <p style={{ margin: "0 0 0 0" }}><strong>Problema:</strong> {problema || "Manutenção padrão."}</p>
+            <div style={{ backgroundColor: "#f8fafc", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+              <h3 style={{ margin: "0 0 6px 0", fontSize: "12px", color: "#0029F5", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px", fontWeight: "bold" }}>Equipamento / Diagnóstico</h3>
+              <p style={{ margin: "0 0 4px 0" }}><strong>Tipo:</strong> {equipamento.tipo || "N/A"}</p>
+              <p style={{ margin: "0 0 4px 0" }}><strong>Marca/Modelo:</strong> {equipamento.marca} {equipamento.modelo}</p>
+              <p style={{ margin: "0 0 4px 0" }}><strong>Nº de Série:</strong> {equipamento.serie || "N/A"}</p>
+              <p style={{ margin: "0 0 0 0" }}><strong>Problema Relatado:</strong> {problema || "Manutenção padrão."}</p>
             </div>
           </div>
 
           {/* Tabela de Itens */}
-          <h3 style={{ margin: "0 0 6px 0", fontSize: "13px", color: "#2d2b7a" }}>Peças e Serviços</h3>
-          <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "20px" }}>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "12px", color: "#0029F5", fontWeight: "bold" }}>Peças & Serviços</h3>
+          <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "20px", fontSize: "11px" }}>
             <thead>
-              <tr style={{ backgroundColor: "#2d2b7a", color: "#fff", fontSize: "11px" }}>
-                <th style={{ padding: "8px 10px", textAlign: "left", border: "1px solid #cbd5e1" }}>Item / Serviço</th>
-                <th style={{ padding: "8px 10px", textAlign: "center", width: "50px", border: "1px solid #cbd5e1" }}>Qtd</th>
-                <th style={{ padding: "8px 10px", textAlign: "right", width: "90px", border: "1px solid #cbd5e1" }}>Valor Unit.</th>
-                <th style={{ padding: "8px 10px", textAlign: "right", width: "90px", border: "1px solid #cbd5e1" }}>Garantia</th>
-                <th style={{ padding: "8px 10px", textAlign: "right", width: "90px", border: "1px solid #cbd5e1" }}>Total</th>
+              <tr style={{ backgroundColor: "#0029F5", color: "#fff" }}>
+                <th style={{ padding: "8px 12px", textAlign: "left", border: "1px solid #e2e8f0" }}>Descrição da Peça ou Serviço</th>
+                <th style={{ padding: "8px 12px", textAlign: "center", width: "50px", border: "1px solid #e2e8f0" }}>Qtd</th>
+                <th style={{ padding: "8px 12px", textAlign: "right", width: "100px", border: "1px solid #e2e8f0" }}>Valor Unit.</th>
+                <th style={{ padding: "8px 12px", textAlign: "right", width: "100px", border: "1px solid #e2e8f0" }}>Garantia</th>
+                <th style={{ padding: "8px 12px", textAlign: "right", width: "100px", border: "1px solid #e2e8f0" }}>Subtotal</th>
               </tr>
             </thead>
             <tbody>
               {itens.map((item, idx) => (
-                <tr key={idx} style={{ fontSize: "11px" }}>
-                  <td style={{ padding: "8px 10px", border: "1px solid #cbd5e1" }}>{item.nome}</td>
-                  <td style={{ padding: "8px 10px", textAlign: "center", border: "1px solid #cbd5e1" }}>{item.quantidade}</td>
-                  <td style={{ padding: "8px 10px", textAlign: "right", border: "1px solid #cbd5e1" }}>R$ {Number(item.valor_unitario).toFixed(2)}</td>
-                  <td style={{ padding: "8px 10px", textAlign: "right", border: "1px solid #cbd5e1" }}>{item.garantia || "30 dias"}</td>
-                  <td style={{ padding: "8px 10px", textAlign: "right", border: "1px solid #cbd5e1", fontWeight: "bold" }}>R$ {Number(item.total).toFixed(2)}</td>
+                <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
+                  <td style={{ padding: "8px 12px", border: "1px solid #e2e8f0" }}>{item.nome}</td>
+                  <td style={{ padding: "8px 12px", textAlign: "center", border: "1px solid #e2e8f0" }}>{item.quantidade}</td>
+                  <td style={{ padding: "8px 12px", textAlign: "right", border: "1px solid #e2e8f0" }}>R$ {Number(item.valor_unitario).toFixed(2)}</td>
+                  <td style={{ padding: "8px 12px", textAlign: "right", border: "1px solid #e2e8f0" }}>{item.garantia || "30 dias"}</td>
+                  <td style={{ padding: "8px 12px", textAlign: "right", border: "1px solid #e2e8f0", fontWeight: "bold" }}>R$ {Number(item.total).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
@@ -697,49 +700,61 @@ export default function CriarOrcamento() {
 
           {/* Totais */}
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "20px" }}>
-            <table style={{ width: "230px", borderCollapse: "collapse", fontSize: "11px" }}>
+            <table style={{ width: "240px", borderCollapse: "collapse", fontSize: "11px" }}>
               <tbody>
                 <tr>
-                  <td style={{ padding: "4px 8px", textAlign: "right", fontWeight: "bold" }}>Subtotal:</td>
-                  <td style={{ padding: "4px 8px", textAlign: "right" }}>R$ {subtotal.toFixed(2)}</td>
+                  <td style={{ padding: "5px 8px", textAlign: "right", fontWeight: "bold", color: "#555" }}>Subtotal:</td>
+                  <td style={{ padding: "5px 8px", textAlign: "right", color: "#555" }}>R$ {subtotal.toFixed(2)}</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: "4px 8px", textAlign: "right", fontWeight: "bold", color: "#10b981" }}>Desconto Comercial:</td>
-                  <td style={{ padding: "4px 8px", textAlign: "right", color: "#10b981" }}>- R$ {Number(desconto).toFixed(2)}</td>
+                  <td style={{ padding: "5px 8px", textAlign: "right", fontWeight: "bold", color: "#10b981" }}>Desconto:</td>
+                  <td style={{ padding: "5px 8px", textAlign: "right", color: "#10b981", fontWeight: "bold" }}>- R$ {Number(desconto).toFixed(2)}</td>
                 </tr>
-                <tr style={{ backgroundColor: "#2d2b7a", color: "#fff" }}>
-                  <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: "bold", fontSize: "12px" }}>Total Final:</td>
-                  <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: "bold", fontSize: "12px" }}>R$ {totalFinal.toFixed(2)}</td>
+                <tr style={{ backgroundColor: "#0029F5", color: "#fff" }}>
+                  <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: "bold", fontSize: "12px" }}>Valor Total Final:</td>
+                  <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: "bold", fontSize: "12px" }}>R$ {totalFinal.toFixed(2)}</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           {/* Condições e rodapé */}
-          <div style={{ borderTop: "2px solid #cbd5e1", paddingTop: "10px", fontSize: "11px" }}>
-            <h4 style={{ margin: "0 0 5px 0", color: "#2d2b7a" }}>Condições Gerais do Orçamento</h4>
-            <p style={{ margin: "0 0 3px 0" }}>- <strong>Validade deste documento:</strong> {condicoes.validade_dias} dias a partir da data de emissão.</p>
-            <p style={{ margin: "0 0 3px 0" }}>- <strong>Forma de pagamento aceita:</strong> {condicoes.forma_pagamento}</p>
-            <p style={{ margin: "0 0 3px 0" }}>- <strong>Prazo médio de entrega/execução:</strong> {condicoes.prazo_entrega}</p>
-            {condicoes.observacoes && <p style={{ margin: "0 0 3px 0" }}>- <strong>Observações:</strong> {condicoes.observacoes}</p>}
+          <div style={{ borderTop: "2px solid #0029F5", paddingTop: "12px", fontSize: "11px" }}>
+            <h4 style={{ margin: "0 0 6px 0", color: "#0029F5", fontWeight: "bold" }}>Condições Gerais do Orçamento</h4>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 15px", marginBottom: "12px" }}>
+              <p style={{ margin: 0 }}>- <strong>Validade deste documento:</strong> {condicoes.validade_dias} dias úteis.</p>
+              <p style={{ margin: 0 }}>- <strong>Forma de pagamento aceita:</strong> {condicoes.forma_pagamento}</p>
+              <p style={{ margin: 0 }}>- <strong>Prazo estimado de execução:</strong> {condicoes.prazo_entrega}</p>
+              {condicoes.observacoes && <p style={{ margin: 0, gridColumn: "span 2" }}>- <strong>Observações:</strong> {condicoes.observacoes}</p>}
+            </div>
             
-            <h4 style={{ margin: "10px 0 5px 0", color: "#2d2b7a" }}>Garantia e Termos</h4>
-            <p style={{ margin: 0, fontSize: "9px", color: "#666", whiteSpace: "pre-line" }}>
-              Serviços prestados contam com garantia legal de 30 dias a partir da data de entrega da máquina.
+            <h4 style={{ margin: "10px 0 6px 0", color: "#0029F5", fontWeight: "bold" }}>Garantia e Termos</h4>
+            <p style={{ margin: 0, fontSize: "9px", color: "#666", textAlign: "justify" }}>
+              Serviços prestados contam com garantia legal de 90 dias a partir da data de entrega da máquina (artigo 26 do CDC). 
               Peças de reposição possuem termos de garantia estipulados diretamente pelo fabricante correspondente.
               Ao autorizar a execução (seja verbalmente, por e-mail ou WhatsApp), o cliente concorda integralmente com os termos aqui dispostos.
             </p>
           </div>
 
           {/* Assinaturas */}
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: "40px" }}>
-            <div style={{ width: "230px", borderTop: "1px solid #666", textAlign: "center", paddingTop: "5px" }}>
-              <p style={{ margin: 0, fontSize: "10px" }}>RG TECH Computadores (Técnico)</p>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: "40px", marginBottom: "40px" }}>
+            <div style={{ width: "240px", borderTop: "1px solid #cbd5e1", textAlign: "center", paddingTop: "6px" }}>
+              <p style={{ margin: 0, fontSize: "10px", fontWeight: "bold", color: "#333" }}>RG TECH Computadores</p>
+              <p style={{ margin: "2px 0 0 0", fontSize: "9px", color: "#666" }}>Assinatura do Técnico</p>
             </div>
-            <div style={{ width: "230px", borderTop: "1px solid #666", textAlign: "center", paddingTop: "5px" }}>
-              <p style={{ margin: 0, fontSize: "10px" }}>Assinatura do Cliente (Aprovação)</p>
+            <div style={{ width: "240px", borderTop: "1px solid #cbd5e1", textAlign: "center", paddingTop: "6px" }}>
+              <p style={{ margin: 0, fontSize: "10px", fontWeight: "bold", color: "#333" }}>{selectedClient?.nome_completo || "Cliente"}</p>
+              <p style={{ margin: "2px 0 0 0", fontSize: "9px", color: "#666" }}>Assinatura de Aprovação</p>
             </div>
           </div>
+
+          {/* Rodapé Corporativo Decorativo */}
+          <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: "15px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "9.5px", color: "#666" }}>
+            <span><strong>RG TECH Computadores</strong></span>
+            <span>📱 (66) 9 9929-8666 | 📸 @rgtechpc | ✉️ rgtechpc@gmail.com</span>
+            <span>📍 Sorriso - MT</span>
+          </div>
+
         </div>
       </div>
 

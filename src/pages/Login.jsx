@@ -64,11 +64,11 @@ export default function Login() {
     <div className="relative min-h-screen bg-[#0D0D0D] text-[#e2e2e2] font-inter flex flex-col justify-center items-center px-4 overflow-hidden hero-gradient">
       {/* Decorative Grid */}
       <div className="absolute inset-0 opacity-5 pointer-events-none"
-        style={{ backgroundImage: "radial-gradient(#2d2b7a 1px, transparent 1px)", backgroundSize: "32px 32px" }}>
+        style={{ backgroundImage: "radial-gradient(#0029F5 1px, transparent 1px)", backgroundSize: "32px 32px" }}>
       </div>
       
       {/* Decorative Glow */}
-      <div className="absolute w-[400px] h-[400px] bg-blue-600/10 blur-[100px] rounded-full top-1/4 left-1/4 animate-pulse"></div>
+      <div className="absolute w-[400px] h-[400px] bg-[#0029F5]/10 blur-[100px] rounded-full top-1/4 left-1/4 animate-pulse"></div>
 
       <div className="w-full max-w-md z-10">
         {/* Logo / Header */}
@@ -77,7 +77,6 @@ export default function Login() {
             <img src="/logo.png" alt="RG TECH" className="h-20 mx-auto object-contain hover:scale-105 transition-all" />
           </Link>
           <h2 className="text-2xl font-bold tracking-tight text-white mt-4">Painel Administrativo</h2>
-          <p className="text-slate-400 text-sm mt-1">Gerenciamento de Clientes, Orçamentos e Financeiro</p>
         </div>
 
         {/* Card */}
@@ -94,7 +93,7 @@ export default function Login() {
               <input
                 type="email"
                 required
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] focus:ring-1 focus:ring-[#4A47FF] transition-all"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-[#19DDFF] focus:ring-1 focus:ring-[#19DDFF] transition-all"
                 placeholder="seu-email@rgtech.com.br"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -106,7 +105,7 @@ export default function Login() {
               <input
                 type="password"
                 required
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] focus:ring-1 focus:ring-[#4A47FF] transition-all"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-[#19DDFF] focus:ring-1 focus:ring-[#19DDFF] transition-all"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -116,7 +115,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-[#2D2B7A] hover:bg-[#4A47FF] disabled:bg-slate-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-blue-900/30"
+              className="w-full py-4 bg-[#0029F5] hover:bg-[#19DDFF] hover:text-[#05050c] disabled:bg-slate-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-[0_0_25px_rgba(25,221,255,0.4)] hover:scale-[1.02]"
             >
               {loading ? "Entrando..." : "Acessar Painel"}
             </button>
