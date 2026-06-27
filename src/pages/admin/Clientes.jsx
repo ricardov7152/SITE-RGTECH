@@ -172,8 +172,9 @@ export default function Clientes() {
       setModalOpen(false);
       loadData();
     } catch (err) {
-      console.error(err);
-      alert("Erro ao salvar cliente.");
+      console.error("Erro completo ao salvar:", err);
+      const errMsg = err.message || (typeof err === "string" ? err : JSON.stringify(err));
+      alert("Erro ao salvar cliente: " + errMsg);
     }
   };
 
