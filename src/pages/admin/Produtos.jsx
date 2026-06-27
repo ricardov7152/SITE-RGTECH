@@ -129,8 +129,9 @@ export default function Produtos() {
       setModalOpen(false);
       loadProdutos();
     } catch (err) {
-      console.error(err);
-      alert("Erro ao salvar produto/serviço.");
+      console.error("Erro ao salvar produto:", err);
+      const errMsg = err.message || (typeof err === "string" ? err : JSON.stringify(err));
+      alert("Erro ao salvar produto/serviço: " + errMsg);
     }
   };
 
