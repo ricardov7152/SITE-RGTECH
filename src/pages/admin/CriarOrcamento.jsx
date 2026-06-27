@@ -662,7 +662,18 @@ export default function CriarOrcamento() {
                 <p style={{ margin: "0 0 4px 0" }}><strong>CPF:</strong> {selectedClient?.cpf_cnpj || "N/A"}</p>
               )}
               <p style={{ margin: "0 0 4px 0" }}><strong>WhatsApp:</strong> {selectedClient?.telefone}</p>
-              <p style={{ margin: "0 0 0 0" }}><strong>E-mail:</strong> {selectedClient?.email}</p>
+              <p style={{ margin: "0 0 4px 0" }}><strong>E-mail:</strong> {selectedClient?.email}</p>
+              <p style={{ margin: "0 0 0 0" }}>
+                <strong>Endereço:</strong>{" "}
+                {[
+                  selectedClient?.endereco,
+                  selectedClient?.bairro,
+                  selectedClient?.cidade,
+                  selectedClient?.estado
+                ]
+                  .filter(Boolean)
+                  .join(", ") || "N/A"}
+              </p>
             </div>
             <div style={{ backgroundColor: "#f8fafc", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
               <h3 style={{ margin: "0 0 6px 0", fontSize: "12px", color: "#0029F5", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px", fontWeight: "bold" }}>Equipamento / Diagnóstico</h3>

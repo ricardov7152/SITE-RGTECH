@@ -33,7 +33,10 @@ export default function Clientes() {
   const [cpfCnpj, setCpfCnpj] = useState("");
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
-  const [endereco, setEndereco] = useState("");
+  const [endereco, setEndereco] = useState(""); // Rua e Número
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [estado, setEstado] = useState("");
   const [origem, setOrigem] = useState("Google");
   
   // Campos exclusivos PJ
@@ -92,6 +95,9 @@ export default function Clientes() {
     setTelefone("");
     setEmail("");
     setEndereco("");
+    setBairro("");
+    setCidade("");
+    setEstado("");
     setOrigem("Google");
     setNomeFantasia("");
     setInscricaoEstadual("");
@@ -114,6 +120,9 @@ export default function Clientes() {
     setTelefone(c.telefone || "");
     setEmail(c.email || "");
     setEndereco(c.endereco || "");
+    setBairro(c.bairro || "");
+    setCidade(c.cidade || "");
+    setEstado(c.estado || "");
     setOrigem(c.origem || "Google");
     setNomeFantasia(c.nome_fantasia || "");
     setInscricaoEstadual(c.inscricao_estadual || "");
@@ -134,14 +143,17 @@ export default function Clientes() {
     const payload = {
       tipo_pessoa: tipoPessoa,
       nome_completo: nomeCompleto,
-      cpf_cnpj: cpfCnpj,
+      cpf_cnpj: cpfCnpj || null,
       telefone: telefone,
-      email: email,
-      endereco: endereco,
+      email: email || null,
+      endereco: endereco || null,
+      bairro: bairro || null,
+      cidade: cidade || null,
+      estado: estado || null,
       origem: origem,
       nome_fantasia: tipoPessoa === "PJ" ? nomeFantasia : null,
-      inscricao_estadual: tipoPessoa === "PJ" ? inscricaoEstadual : null,
-      nome_responsavel: tipoPessoa === "PJ" ? nomeResponsavel : null,
+      inscricao_estadual: tipoPessoa === "PJ" ? (inscricaoEstadual || null) : null,
+      nome_responsavel: tipoPessoa === "PJ" ? (nomeResponsavel || null) : null,
       consentimento_marketing: consentimentoMarketing,
       data_nascimento_fundacao: dataNascimentoFundacao || null,
       observacoes_internas: observacoesInternas || null,
@@ -472,17 +484,55 @@ export default function Clientes() {
                     placeholder={tipoPessoa === "PJ" ? "00.000.000/0001-00" : "000.000.000-00"}
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
                     value={cpfCnpj}
-                    onChange={(e) => setCpfCnpj(e.target.value)}
+                    onChange={(e) => {
+                      let val = e.target.value.replace(/\D/g, "");
+                      if (tipoPessoa === "PF") {
+                        if (val.length > 11) val = val.slice(0, 11);
+                        if (val.length > 9) {
+                          val = val.replace(/^(\d{3})(\d{3})(\d{3})(\d{1,2})$/, "$1.$2.$3-$4");
+                        } else if (val.length > 6) {
+                          val = val.replace(/^(\d{3})(\d{3})(\d{1,3})$/, "$1.$2.$3");
+                        } else if (val.length > 3) {
+                          val = val.replace(/^(\d{3})(\d{1,3})$/, "$1.$2");
+                        }
+                      } else {
+                        if (val.length > 14) val = val.slice(0, 14);
+                        if (val.length > 12) {
+                          val = val.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})$/, "$1.$2.$3/$4-$5");
+                        } else if (val.length > 8) {
+                          val = val.replace(/^(\d{2})(\d{3})(\d{3})(\d{1,4})$/, "$1.$2.$3/$4");
+                        } else if (val.length > 5) {
+                          val = val.replace(/^(\d{2})(\d{3})(\d{1,3})$/, "$1.$2.$3");
+                        } else if (val.length > 2) {
+                          val = val.replace(/^(\d{2})(\d{1,3})$/, "$1.$2");
+                        }
+                      }
+                      setCpfCnpj(val);
+                    }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Telefone / WhatsApp</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Telefone / WhatsApp *</label>
                   <input 
                     type="text" 
-                    placeholder="Ex: (66) 99929-8666"
+                    required
+                    placeholder="Ex: (66) 9 9929-8666"
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
                     value={telefone}
-                    onChange={(e) => setTelefone(e.target.value)}
+                    onChange={(e) => {
+                      let val = e.target.value.replace(/\D/g, "");
+                      if (val.length > 11) val = val.slice(0, 11);
+                      if (val.length > 10) {
+                        val = val.replace(/^(\d{2})(\d{1})(\d{4})(\d{4})$/, "($1) $2 $3-$4");
+                      } else if (val.length > 6) {
+                        val = val.replace(/^(\d{2})(\d{4})(\d{1,4})$/, "($1) $2-$3");
+                      } else if (val.length > 2) {
+                        val = val.replace(/^(\d{2})(\d{1,4})$/, "($1) $2");
+                      } else if (val.length > 0) {
+                        val = val.replace(/^(\d{1,2})$/, "($1");
+                      }
+                      setTelefone(val);
+                    }}
                   />
                 </div>
                 <div>
@@ -536,19 +586,85 @@ export default function Clientes() {
                 </div>
               )}
 
-              {/* Endereço e Origem */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-400 mb-1">Endereço Completo</label>
-                  <input 
-                    type="text" 
-                    placeholder="Rua, número, bairro, cidade - UF"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
-                    value={endereco}
-                    onChange={(e) => setEndereco(e.target.value)}
-                  />
+              {/* Endereço Desmembrado */}
+              <div className="space-y-4 p-4 bg-white/2 rounded-xl border border-white/5">
+                <span className="block text-xs font-bold uppercase tracking-wider text-slate-400">Endereço do Cliente</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Rua e Número</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: Rua Celeste, 670"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                      value={endereco}
+                      onChange={(e) => setEndereco(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Bairro</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: Centro"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                      value={bairro}
+                      onChange={(e) => setBairro(e.target.value)}
+                    />
+                  </div>
                 </div>
-                <div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Cidade</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: Sorriso"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                      value={cidade}
+                      onChange={(e) => setCidade(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Estado</label>
+                    <select 
+                      className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+                      value={estado}
+                      onChange={(e) => setEstado(e.target.value)}
+                    >
+                      <option value="">Selecione...</option>
+                      <option value="AC">AC</option>
+                      <option value="AL">AL</option>
+                      <option value="AP">AP</option>
+                      <option value="AM">AM</option>
+                      <option value="BA">BA</option>
+                      <option value="CE">CE</option>
+                      <option value="DF">DF</option>
+                      <option value="ES">ES</option>
+                      <option value="GO">GO</option>
+                      <option value="MA">MA</option>
+                      <option value="MT">MT</option>
+                      <option value="MS">MS</option>
+                      <option value="MG">MG</option>
+                      <option value="PA">PA</option>
+                      <option value="PB">PB</option>
+                      <option value="PR">PR</option>
+                      <option value="PE">PE</option>
+                      <option value="PI">PI</option>
+                      <option value="RJ">RJ</option>
+                      <option value="RN">RN</option>
+                      <option value="RS">RS</option>
+                      <option value="RO">RO</option>
+                      <option value="RR">RR</option>
+                      <option value="SC">SC</option>
+                      <option value="SP">SP</option>
+                      <option value="SE">SE</option>
+                      <option value="TO">TO</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Origem e relacionamento */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-3">
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Origem (Como chegou) *</label>
                   <select 
                     required
@@ -809,7 +925,17 @@ export default function Clientes() {
                     <div className="col-span-2"><span className="text-slate-500">Documento:</span> {selectedFichaCliente.cpf_cnpj || "N/D"}</div>
                     <div className="col-span-2"><span className="text-slate-500">E-mail:</span> {selectedFichaCliente.email || "N/D"}</div>
                     <div className="col-span-2"><span className="text-slate-500">Telefone:</span> {selectedFichaCliente.telefone || "N/D"}</div>
-                    <div className="col-span-2"><span className="text-slate-500">Endereço:</span> {selectedFichaCliente.endereco || "N/D"}</div>
+                    <div className="col-span-2">
+                      <span className="text-slate-500">Endereço:</span>{" "}
+                      {[
+                        selectedFichaCliente.endereco,
+                        selectedFichaCliente.bairro,
+                        selectedFichaCliente.cidade,
+                        selectedFichaCliente.estado
+                      ]
+                        .filter(Boolean)
+                        .join(", ") || "N/D"}
+                    </div>
                     {selectedFichaCliente.data_nascimento_fundacao && (
                       <div className="col-span-2"><span className="text-slate-500">Aniversário/Fundação:</span> {formatDateStr(selectedFichaCliente.data_nascimento_fundacao)}</div>
                     )}

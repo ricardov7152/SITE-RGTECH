@@ -12,7 +12,10 @@ CREATE TABLE IF NOT EXISTS public.clientes (
     cpf_cnpj TEXT,
     telefone TEXT,
     email TEXT,
-    endereco TEXT,
+    endereco TEXT, -- Armazena Rua e Número
+    bairro TEXT,
+    cidade TEXT,
+    estado TEXT,
     origem TEXT CHECK (origem IN ('Indicação', 'Google', 'Instagram', 'Site', 'WhatsApp', 'Outros')),
     
     -- Exclusivos para Pessoa Jurídica (PJ)
