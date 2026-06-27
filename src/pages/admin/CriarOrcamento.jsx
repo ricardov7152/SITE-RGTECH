@@ -206,8 +206,9 @@ export default function CriarOrcamento() {
       alert("Orçamento salvo com sucesso!");
       navigate("/admin/orcamentos");
     } catch (err) {
-      console.error(err);
-      alert("Erro ao salvar orçamento.");
+      console.error("Erro ao salvar orçamento:", err);
+      const errMsg = err.message || (typeof err === "string" ? err : JSON.stringify(err));
+      alert("Erro ao salvar orçamento: " + errMsg);
     }
   };
 
