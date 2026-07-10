@@ -414,8 +414,8 @@ export const db = {
           }
         }
 
-        const dataAberturaStr = new Date().toISOString().split('T')[0];
-        const dataAbertura = new Date();
+        const dataAberturaStr = orcamento.data_emissao || new Date().toISOString().split('T')[0];
+        const dataAbertura = new Date(dataAberturaStr + "T00:00:00");
         const dataPrevistaDate = new Date(dataAbertura);
         dataPrevistaDate.setDate(dataPrevistaDate.getDate() + prazoDias);
         const dataPrevistaStr = dataPrevistaDate.toISOString().split('T')[0];
@@ -528,6 +528,33 @@ export const db = {
         return { error: null };
       } catch (err) {
         console.error("Erro ao excluir banco no Supabase:", err);
+        throw err;
+      }
+    }
+  },
+  // ── Configurações Gerais ──
+  configuracoes: {
+    get: async () => {
+      try {
+        const { data, error } = await supabase.from('configuracoes').select('*').eq('chave', 'erp_configuracoes').maybeSingle();
+        if (error) throw error;
+        return { data: data ? data.valor : null, error: null };
+      } catch (err) {
+        console.error("Erro ao carregar configurações no Supabase:", err);
+        throw err;
+      }
+    },
+    upsert: async (valor) => {
+      try {
+        const { data, error } = await supabase.from('configuracoes').upsert({
+          chave: 'erp_configuracoes',
+          valor,
+          atualizado_em: new Date().toISOString()
+        }).select();
+        if (error) throw error;
+        return { data: data[0].valor, error: null };
+      } catch (err) {
+        console.error("Erro ao salvar configurações no Supabase:", err);
         throw err;
       }
     }

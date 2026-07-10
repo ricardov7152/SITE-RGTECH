@@ -33,6 +33,13 @@ export default function Dashboard() {
   const [ordens, setOrdens] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Seletor de Período
+  const [selectedPeriod, setSelectedPeriod] = useState(() => {
+    const d = new Date();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    return `${d.getFullYear()}-${month}`;
+  });
+
   // Configurações
   const [configs, setConfigs] = useState({
     metas: {},
@@ -41,8 +48,48 @@ export default function Dashboard() {
   const [isEditingMeta, setIsEditingMeta] = useState(false);
   const [tempMeta, setTempMeta] = useState(5000);
 
-  const currentMonthKey = new Date().toISOString().substring(0, 7);
-  const metaFaturamento = configs.metas[currentMonthKey] || 5000;
+  const metaFaturamento = configs.metas[selectedPeriod] || 5000;
+
+  // Gerar opções de período dinamicamente (de 2026-01 até o mês/ano atual)
+  const getPeriodOptions = () => {
+    const startYear = 2026;
+    const startMonth = 0; // Janeiro
+    
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+    
+    const options = [];
+    const monthsNames = [
+      "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+      "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ];
+    
+    let year = startYear;
+    let month = startMonth;
+    
+    while (year < currentYear || (year === currentYear && month <= currentMonth)) {
+      const monthStr = String(month + 1).padStart(2, "0");
+      const value = `${year}-${monthStr}`;
+      const label = `${monthsNames[month]} de ${year}`;
+      options.push({ value, label });
+      
+      month++;
+      if (month > 11) {
+        month = 0;
+        year++;
+      }
+    }
+    
+    return options.reverse();
+  };
+
+  const periodOptions = getPeriodOptions();
+
+  // Atualiza a meta temporária ao carregar as configurações ou mudar o período selecionado
+  useEffect(() => {
+    setTempMeta(configs.metas[selectedPeriod] || 5000);
+  }, [selectedPeriod, configs.metas]);
 
   useEffect(() => {
     async function loadData() {
@@ -59,20 +106,35 @@ export default function Dashboard() {
         setItensDeOrcamento(itemsData || []);
         setOrdens(ordensData || []);
 
-        const stored = localStorage.getItem("rg_local_configuracoes");
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            const loadedConfigs = {
-              metas: parsed.metas || {},
-              dias_alerta_followup: parsed.dias_alerta_followup !== undefined ? parsed.dias_alerta_followup : 3,
-            };
-            setConfigs(loadedConfigs);
-            const cmKey = new Date().toISOString().substring(0, 7);
-            setTempMeta(loadedConfigs.metas[cmKey] || 5000);
-          } catch (e) {
-            console.error(e);
+        let loadedConfigs = null;
+        try {
+          const { data: dbConfigs } = await db.configuracoes.get();
+          if (dbConfigs) {
+            loadedConfigs = dbConfigs;
           }
+        } catch (dbErr) {
+          console.error("Erro ao buscar do Supabase, tentando local...", dbErr);
+        }
+
+        if (!loadedConfigs) {
+          const stored = localStorage.getItem("rg_local_configuracoes");
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              loadedConfigs = {
+                metas: parsed.metas || {},
+                dias_alerta_followup: parsed.dias_alerta_followup !== undefined ? parsed.dias_alerta_followup : 3,
+              };
+              // Migrar para o Supabase
+              await db.configuracoes.upsert(loadedConfigs);
+            } catch (e) {
+              console.error("Erro ao migrar local configurações para o banco:", e);
+            }
+          }
+        }
+
+        if (loadedConfigs) {
+          setConfigs(loadedConfigs);
         }
       } catch (err) {
         console.error(err);
@@ -89,24 +151,27 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSaveMeta = () => {
+  const handleSaveMeta = async () => {
     const value = Number(tempMeta);
     if (isNaN(value) || value <= 0) {
       alert("Por favor, insira um valor válido para a meta.");
       return;
     }
-    const cmKey = new Date().toISOString().substring(0, 7);
     const newConfigs = {
       ...configs,
       metas: {
         ...configs.metas,
-        [cmKey]: value
+        [selectedPeriod]: value
       }
     };
-    setConfigs(newConfigs);
-    localStorage.setItem("rg_local_configuracoes", JSON.stringify(newConfigs));
-    localStorage.setItem("rg_local_meta_faturamento", value);
-    setIsEditingMeta(false);
+    try {
+      setConfigs(newConfigs);
+      await db.configuracoes.upsert(newConfigs);
+      setIsEditingMeta(false);
+    } catch (e) {
+      console.error("Erro ao salvar meta no banco:", e);
+      alert("Erro ao salvar meta no banco de dados.");
+    }
   };
 
   if (loading) {
@@ -118,29 +183,29 @@ export default function Dashboard() {
     );
   }
 
-  // --- CÁLCULOS FINANCEIROS BÁSICOS ---
+  // --- CÁLCULOS FINANCEIROS FILTRADOS POR PERÍODO ---
   const receitasRecebidas = financeiro
-    .filter(f => f.tipo === "Receita" && f.status === "Pago")
+    .filter(f => f.tipo === "Receita" && f.status === "Pago" && (f.data_pagamento || f.data_vencimento)?.startsWith(selectedPeriod))
     .reduce((acc, curr) => acc + Number(curr.valor), 0);
 
   const receitasPendentes = financeiro
-    .filter(f => f.tipo === "Receita" && f.status === "Pendente")
+    .filter(f => f.tipo === "Receita" && f.status === "Pendente" && f.data_vencimento?.startsWith(selectedPeriod))
     .reduce((acc, curr) => acc + Number(curr.valor), 0);
 
   const receitaTotal = receitasRecebidas + receitasPendentes;
 
   const despesasPagas = financeiro
-    .filter(f => f.tipo === "Despesa" && f.status === "Pago")
+    .filter(f => f.tipo === "Despesa" && f.status === "Pago" && (f.data_pagamento || f.data_vencimento)?.startsWith(selectedPeriod))
     .reduce((acc, curr) => acc + Number(curr.valor), 0);
 
-  // --- TICKET MÉDIO ---
-  const totalVendasPagas = financeiro.filter(f => f.tipo === "Receita" && f.status === "Pago").length;
+  // --- TICKET MÉDIO NO PERÍODO ---
+  const totalVendasPagas = financeiro.filter(f => f.tipo === "Receita" && f.status === "Pago" && (f.data_pagamento || f.data_vencimento)?.startsWith(selectedPeriod)).length;
   const ticketMedio = totalVendasPagas > 0 ? receitasRecebidas / totalVendasPagas : 0;
 
-  // --- PROGRESSO DA META ---
+  // --- PROGRESSO DA META NO PERÍODO ---
   const percentMeta = Math.min(100, Math.round((receitasRecebidas / metaFaturamento) * 100));
 
-  // --- CLASSIFICAÇÃO E CONTAGEM DE ORÇAMENTOS ---
+  // --- CLASSIFICAÇÃO E CONTAGEM DE ORÇAMENTOS NO PERÍODO ---
   const hoje = new Date();
   let aprovadosCount = 0;
   let recusadosCount = 0;
@@ -148,7 +213,9 @@ export default function Dashboard() {
   let pendentesCount = 0; // Em aberto (dentro da validade)
   let vencidosCount = 0;   // Em aberto (vencidos)
 
-  orcamentos.forEach(o => {
+  const orcamentosFiltrados = orcamentos.filter(o => o.data_emissao?.startsWith(selectedPeriod));
+
+  orcamentosFiltrados.forEach(o => {
     if (o.status === "Aprovado") aprovadosCount++;
     else if (o.status === "Recusado") recusadosCount++;
     else if (o.status === "Concluído") concluidosCount++;
@@ -166,11 +233,11 @@ export default function Dashboard() {
     }
   });
 
-  const totalOrcamentos = orcamentos.length;
+  const totalOrcamentos = orcamentosFiltrados.length;
   const taxaConversao = totalOrcamentos > 0 ? ((aprovadosCount + concluidosCount) / totalOrcamentos) * 100 : 0;
 
-  // --- ALERTA: ORÇAMENTOS SEM RESPOSTA HÁ X DIAS ---
-  const alertasOrcamentos = orcamentos.filter(o => {
+  // --- ALERTA: ORÇAMENTOS DO PERÍODO SEM RESPOSTA HÁ X DIAS ---
+  const alertasOrcamentos = orcamentosFiltrados.filter(o => {
     if (o.status !== "Em aberto") return false;
     const dataEmissao = new Date(o.data_emissao + "T00:00:00");
     const diffTime = Math.abs(hoje - dataEmissao);
@@ -178,13 +245,13 @@ export default function Dashboard() {
     return diffDays >= configs.dias_alerta_followup;
   });
 
-  // --- VENDAS DE PRODUTOS E SERVIÇOS ---
+  // --- VENDAS DE PRODUTOS E SERVIÇOS NO PERÍODO ---
   let totalVendasProdutos = 0;
   let totalVendasServicos = 0;
   
   itensDeOrcamento.forEach(item => {
     const parentOrc = orcamentos.find(o => o.id === item.orcamento_id);
-    if (parentOrc && (parentOrc.status === "Aprovado" || parentOrc.status === "Concluído")) {
+    if (parentOrc && parentOrc.data_emissao?.startsWith(selectedPeriod) && (parentOrc.status === "Aprovado" || parentOrc.status === "Concluído")) {
       const valor = Number(item.total || 0);
       const isPeca = item.tipo === "Peça";
 
@@ -196,14 +263,14 @@ export default function Dashboard() {
     }
   });
 
-  // --- GRÁFICO DE RECEITAS POR MÊS ---
+  // --- GRÁFICO DE RECEITAS POR MÊS (ANUAL) ---
   const receitasPorMes = {};
   const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  const anoAtual = new Date().getFullYear();
+  const anoFoco = Number(selectedPeriod.substring(0, 4));
 
   mesesNomes.forEach((_, idx) => {
     const mesStr = String(idx + 1).padStart(2, "0");
-    receitasPorMes[`${anoAtual}-${mesStr}`] = 0;
+    receitasPorMes[`${anoFoco}-${mesStr}`] = 0;
   });
 
   financeiro
@@ -229,35 +296,27 @@ export default function Dashboard() {
 
   const maxReceitaMes = Math.max(...chartDataReceitas.map(d => d.valor), 1);
 
-  // --- CRESCIMENTO MENSAL (%) ---
-  const mesAtualStr = String(hoje.getMonth() + 1).padStart(2, "0");
-  const anoAtualStr = String(hoje.getFullYear());
-  const chaveMesAtual = `${anoAtualStr}-${mesAtualStr}`;
+  // --- CRESCIMENTO MENSAL (%) COMPARADO AO MÊS ANTERIOR DO PERÍODO SELECIONADO ---
+  const [selAno, selMes] = selectedPeriod.split("-").map(Number);
+  const prevMonthIdx = selMes === 1 ? 12 : selMes - 1;
+  const prevYear = selMes === 1 ? selAno - 1 : selAno;
+  const prevPeriodKey = `${prevYear}-${String(prevMonthIdx).padStart(2, "0")}`;
 
-  const mesAnteriorIdx = hoje.getMonth() === 0 ? 11 : hoje.getMonth() - 1;
-  const anoAnteriorNum = hoje.getMonth() === 0 ? hoje.getFullYear() - 1 : hoje.getFullYear();
-  const mesAnteriorStr = String(mesAnteriorIdx + 1).padStart(2, "0");
-  const chaveMesAnterior = `${anoAnteriorNum}-${mesAnteriorStr}`;
-
-  const receitaMesAtual = financeiro
-    .filter(f => f.tipo === "Receita" && f.status === "Pago" && (f.data_pagamento || f.data_vencimento)?.startsWith(chaveMesAtual))
-    .reduce((sum, f) => sum + Number(f.valor), 0);
-
-  const receitaMesAnterior = financeiro
-    .filter(f => f.tipo === "Receita" && f.status === "Pago" && (f.data_pagamento || f.data_vencimento)?.startsWith(chaveMesAnterior))
-    .reduce((sum, f) => sum + Number(f.valor), 0);
+  const faturamentoPeriodoAnterior = financeiro
+    .filter(f => f.tipo === "Receita" && f.status === "Pago" && (f.data_pagamento || f.data_vencimento)?.startsWith(prevPeriodKey))
+    .reduce((acc, curr) => acc + Number(curr.valor), 0);
 
   let crescimentoPercentual = 0;
   let temComparativo = false;
-  if (receitaMesAnterior > 0) {
-    crescimentoPercentual = ((receitaMesAtual - receitaMesAnterior) / receitaMesAnterior) * 100;
+  if (faturamentoPeriodoAnterior > 0) {
+    crescimentoPercentual = ((receitasRecebidas - faturamentoPeriodoAnterior) / faturamentoPeriodoAnterior) * 100;
     temComparativo = true;
   }
 
-  // --- RANKING DE CLIENTES ---
+  // --- RANKING DE CLIENTES NO PERÍODO ---
   const clientRevenue = {};
   financeiro
-    .filter(f => f.tipo === "Receita" && f.status === "Pago" && f.cliente_id)
+    .filter(f => f.tipo === "Receita" && f.status === "Pago" && f.cliente_id && (f.data_pagamento || f.data_vencimento)?.startsWith(selectedPeriod))
     .forEach(f => {
       const clientName = orcamentos.find(o => o.id === f.orcamento_id)?.cliente_nome || 
                          clientes.find(c => c.id === f.cliente_id)?.nome_completo || 
@@ -270,10 +329,13 @@ export default function Dashboard() {
     .sort((a, b) => b.value - a.value)
     .slice(0, 5);
 
-  // --- SERVIÇOS MAIS REQUISITADOS ---
+  // --- SERVIÇOS MAIS REQUISITADOS NO PERÍODO ---
   const serviceCount = {};
   itensDeOrcamento.forEach(item => {
-    serviceCount[item.nome] = (serviceCount[item.nome] || 0) + item.quantidade;
+    const parentOrc = orcamentos.find(o => o.id === item.orcamento_id);
+    if (parentOrc && parentOrc.data_emissao?.startsWith(selectedPeriod)) {
+      serviceCount[item.nome] = (serviceCount[item.nome] || 0) + item.quantidade;
+    }
   });
 
   const popularServices = Object.entries(serviceCount)
@@ -281,9 +343,11 @@ export default function Dashboard() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
-  // --- ORIGENS DE CLIENTES (CRM) ---
+  // --- ORIGENS DE CLIENTES NO PERÍODO (CRM) ---
   const leadSource = { "Google": 0, "Instagram": 0, "Site": 0, "WhatsApp": 0, "Indicação": 0, "Outros": 0 };
-  clientes.forEach(c => {
+  const clientesDoPeriodo = clientes.filter(c => c.data_cadastro?.startsWith(selectedPeriod) || c.created_at?.startsWith(selectedPeriod));
+  
+  clientesDoPeriodo.forEach(c => {
     if (c.origem && leadSource[c.origem] !== undefined) {
       leadSource[c.origem]++;
     } else {
@@ -294,10 +358,10 @@ export default function Dashboard() {
   const leadSourcePercentage = Object.entries(leadSource).map(([source, count]) => ({
     source,
     count,
-    percent: clientes.length > 0 ? Math.round((count / clientes.length) * 100) : 0
+    percent: clientesDoPeriodo.length > 0 ? Math.round((count / clientesDoPeriodo.length) * 100) : 0
   })).sort((a, b) => b.count - a.count);
 
-  // --- CÁLCULOS DAS ORDENS DE SERVIÇO ---
+  // --- CÁLCULOS DAS ORDENS DE SERVIÇO NO PERÍODO ---
   let osRecebido = 0;
   let osEmDiagnostico = 0;
   let osAguardandoPeca = 0;
@@ -306,8 +370,9 @@ export default function Dashboard() {
   let osAtrasadas = 0;
 
   const hojeStr = new Date().toISOString().split("T")[0];
+  const ordensDoPeriodo = ordens.filter(os => os.data_abertura?.startsWith(selectedPeriod));
 
-  ordens.forEach(os => {
+  ordensDoPeriodo.forEach(os => {
     const status = os.status;
     if (status !== "entregue" && status !== "cancelado") {
       if (status === "recebido") osRecebido++;
@@ -340,9 +405,27 @@ export default function Dashboard() {
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Top Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-white">Dashboard Geral</h1>
-        <p className="text-slate-400 text-sm mt-1">Resumo operacional, financeiro e CRM da RG TECH Computadores</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Dashboard Geral</h1>
+          <p className="text-slate-400 text-sm mt-1">Resumo operacional, financeiro e CRM da RG TECH Computadores</p>
+        </div>
+        
+        {/* Seletor de Período */}
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Período:</label>
+          <select
+            className="bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-[#4A47FF] transition-all cursor-pointer shadow-lg"
+            value={selectedPeriod}
+            onChange={(e) => setSelectedPeriod(e.target.value)}
+          >
+            {periodOptions.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* ── KPIs Cards ── */}
@@ -512,7 +595,7 @@ export default function Dashboard() {
         <div className="glass p-6 rounded-2xl shadow-xl space-y-4 lg:col-span-2">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
             <div className="space-y-0.5">
-              <h3 className="font-bold text-white text-base">Faturamento Mensal ({anoAtual})</h3>
+              <h3 className="font-bold text-white text-base">Faturamento Mensal ({anoFoco})</h3>
               <p className="text-slate-500 text-xs">Receitas compensadas mês a mês</p>
             </div>
             <Calendar size={18} className="text-slate-400" />
@@ -522,17 +605,18 @@ export default function Dashboard() {
             {chartDataReceitas.map((data, idx) => {
               const heightPercent = Math.max(5, (data.valor / maxReceitaMes) * 100);
               return (
-                <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group cursor-pointer">
-                  {/* Tooltip valor */}
-                  <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black border border-white/10 px-2 py-1 rounded text-[10px] text-white font-bold whitespace-nowrap absolute mb-14 shadow-lg">
-                    R$ {data.valor.toFixed(0)}
-                  </span>
+                <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group cursor-pointer relative">
                   
                   {/* Barra */}
                   <div 
                     className="w-full bg-[#2D2B7A]/50 hover:bg-[#4A47FF] transition-all rounded-t-lg relative border-t border-white/10 shadow-[0_0_10px_rgba(45,43,122,0.1)]"
                     style={{ height: `${heightPercent}%` }}
-                  />
+                  >
+                    {/* Tooltip valor */}
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-950 border border-white/10 px-2.5 py-1.5 rounded-lg text-[10px] text-white font-bold whitespace-nowrap absolute bottom-full left-1/2 -translate-x-1/2 mb-2 shadow-2xl z-10 pointer-events-none">
+                      R$ {data.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
                   {/* Label */}
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{data.label}</span>
                 </div>

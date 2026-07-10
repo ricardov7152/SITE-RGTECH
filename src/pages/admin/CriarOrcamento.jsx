@@ -88,7 +88,7 @@ export default function CriarOrcamento() {
             setDesconto(Number(orc.desconto || 0));
             setStatus(orc.status || "Em aberto");
             setMotivoRecusa(orc.motivo_recusa || "");
-            setDataEmissao(orc.data_emissao || new Date().toISOString().split("T")[0]);
+            setDataEmissao(orc.data_emissao ? orc.data_emissao.split("T")[0].split(" ")[0] : new Date().toISOString().split("T")[0]);
             setCondicoes({
               validade_dias: orc.validade_dias || 7,
               prazo_entrega: orc.prazo_entrega || "3 a 5 dias úteis",
@@ -230,6 +230,20 @@ export default function CriarOrcamento() {
     };
     
     html2pdf().from(element).set(opt).save();
+  };
+
+  const formatDataExibicao = (dateStr) => {
+    if (!dateStr) return "";
+    try {
+      const cleanDate = dateStr.split("T")[0].split(" ")[0];
+      const parts = cleanDate.split("-");
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`; // DD/MM/YYYY
+      }
+      return dateStr;
+    } catch (e) {
+      return dateStr;
+    }
   };
 
   if (loading) {
@@ -548,7 +562,7 @@ export default function CriarOrcamento() {
           <div className="glass p-6 rounded-2xl shadow-xl space-y-4">
             <h3 className="font-bold text-white text-base border-b border-white/5 pb-2">Condições Comerciais</h3>
             
-            {/* Status e Motivo de Recusa */}
+            {/* Status, Data de Emissão e Motivo de Recusa */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-2 border-b border-white/5">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Status do Orçamento *</label>
@@ -563,8 +577,17 @@ export default function CriarOrcamento() {
                   <option value="Concluído">Concluído</option>
                 </select>
               </div>
-              {status === "Recusado" ? (
-                <div className="animate-fadeIn">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Data de Emissão *</label>
+                <input 
+                  type="date"
+                  className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+                  value={dataEmissao}
+                  onChange={(e) => setDataEmissao(e.target.value)}
+                />
+              </div>
+              {status === "Recusado" && (
+                <div className="col-span-2 animate-fadeIn">
                   <label className="block text-xs font-semibold text-rose-400 mb-1">Motivo da Recusa (Opcional)</label>
                   <input 
                     type="text" 
@@ -573,10 +596,6 @@ export default function CriarOrcamento() {
                     value={motivoRecusa}
                     onChange={(e) => setMotivoRecusa(e.target.value)}
                   />
-                </div>
-              ) : (
-                <div className="text-xs text-slate-500 flex items-center pt-6">
-                  Modifique para "Recusado" para detalhar o motivo.
                 </div>
               )}
             </div>
@@ -644,7 +663,7 @@ export default function CriarOrcamento() {
           <div style={{ textAlign: "center", marginBottom: "20px" }}>
             <h1 style={{ margin: 0, fontSize: "18px", color: "#0029F5", textTransform: "uppercase", letterSpacing: "1px" }}>Orçamento de Serviços</h1>
             <p style={{ margin: "4px 0 0 0", color: "#666", fontSize: "12px" }}>
-              <strong>Nº Proposta:</strong> #{orcamentoNumero} | <strong>Emissão:</strong> {format(new Date(dataEmissao + "T00:00:00"), "dd/MM/yyyy")}
+              <strong>Nº Proposta:</strong> #{orcamentoNumero} | <strong>Emissão:</strong> {formatDataExibicao(dataEmissao)}
             </p>
           </div>
 

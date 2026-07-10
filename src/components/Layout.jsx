@@ -22,9 +22,7 @@ export default function Layout() {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    // 1. Limpar sessão offline
-    localStorage.removeItem("rgtech_session");
-    // 2. Limpar sessão do Supabase Auth
+    // Limpar sessão do Supabase Auth
     try {
       await supabase.auth.signOut();
     } catch (e) {

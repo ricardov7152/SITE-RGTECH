@@ -36,3 +36,29 @@
   * Criado um gráfico de barras mensal estilizado inteiramente com Tailwind CSS v4 no [Dashboard.jsx](file:///C:/Projetos%20Antigravity/Jarvis/SITE-RGTECH/src/pages/admin/Dashboard.jsx).
   * Executado `npm run build` com sucesso para validar a compilação.
 
+### 2026-07-02
+* **Segurança e Limpeza de Bypass:**
+  * Removidos por completo todos os bypasses de autenticação offline/desenvolvimento (`rgtech_session` do LocalStorage) de [ProtectedRoute.jsx](file:///C:/Projetos%20Antigravity/Jarvis/SITE-RGTECH/src/components/ProtectedRoute.jsx) e [Layout.jsx](file:///C:/Projetos%20Antigravity/Jarvis/SITE-RGTECH/src/components/Layout.jsx), estabelecendo 100% de conformidade com o Supabase Auth.
+* **Controle de Períodos no Dashboard Geral:**
+  * Adicionado dropdown de seleção de períodos (mês/ano) dinâmico no [Dashboard.jsx](file:///C:/Projetos%20Antigravity/Jarvis/SITE-RGTECH/src/pages/admin/Dashboard.jsx), partindo de Janeiro de 2026 até o mês atual de forma reversa.
+  * Filtragem completa de todas as estatísticas, conversões, faturamentos e rankings por período selecionado.
+  * Ajuste do gráfico para calcular receitas anuais focando no ano correspondente ao período selecionado.
+* **Datas Retroativas para Orçamentos:**
+  * Adicionado seletor de data de emissão no formulário de criação de orçamentos [CriarOrcamento.jsx](file:///C:/Projetos%20Antigravity/Jarvis/SITE-RGTECH/src/pages/admin/CriarOrcamento.jsx).
+  * Propagação da data de emissão para a data de abertura das Ordens de Serviço (OS) geradas de forma automática por aprovação em [supabase.js](file:///C:/Projetos%20Antigravity/Jarvis/SITE-RGTECH/src/services/supabase.js).
+* **Ajuste de Visualização do Faturamento:**
+  * Correção e readequação do Tooltip de hover no gráfico mensal, exibindo os faturamentos formatados no padrão de moeda `R$ XX.XXX,XX` centralizados no topo de cada coluna.
+  * Executado `npm.cmd run build` com sucesso, concluindo a compilação de produção sem erros em 2.48 segundos.
+* **Correção de Crash de Datas Retroativas (Editar Orçamento):**
+  * Resolvido crash de tela preta/em branco ao carregar orçamentos antigos para edição. O problema ocorria devido ao `date-fns/format` receber datas com formatações de hora inválidas ou vazias no PDF template.
+  * Implementado o método de formatação seguro `formatDataExibicao` em [CriarOrcamento.jsx](file:///C:/Projetos%20Antigravity/Jarvis/SITE-RGTECH/src/pages/admin/CriarOrcamento.jsx) para prevenir quebras e isolar a data `YYYY-MM-DD`.
+  * Recriado o arquivo de produção [dist.zip](file:///C:/Projetos%20Antigravity/Jarvis/SITE-RGTECH/dist.zip) com a correção aplicada.
+
+### 2026-07-08
+* **Persistência de Metas e Configurações ERP no Supabase:**
+  * Criada a tabela `configuracoes` no banco de dados para armazenar configurações gerais do ERP e histórico de metas mensais por chave em JSONB.
+  * Implementados serviços de leitura e gravação `db.configuracoes.get` e `db.configuracoes.upsert` em [supabase.js](file:///C:/Projetos%20Antigravity/Jarvis/SITE-RGTECH/src/services/supabase.js).
+  * Atualizado o [Dashboard.jsx](file:///C:/Projetos%20Antigravity/Jarvis/SITE-RGTECH/src/pages/admin/Dashboard.jsx) e [Configuracoes.jsx](file:///C:/Projetos%20Antigravity/Jarvis/SITE-RGTECH/src/pages/admin/Configuracoes.jsx) para salvar e obter metas e followup diretamente da nuvem, resolvendo os problemas de metas resetando em outros computadores ou navegadores.
+  * Implementada migração automática transparente: a primeira inicialização do ERP em navegadores contendo metas no `localStorage` irá migrar e sincronizá-las diretamente para o banco de dados.
+  * Recompilado e recriado o pacote [dist.zip](file:///C:/Projetos%20Antigravity/Jarvis/SITE-RGTECH/dist.zip) com sucesso.
+

@@ -61,29 +61,51 @@ export default function Configuracoes() {
   };
 
   useEffect(() => {
-    const stored = localStorage.getItem("rg_local_configuracoes");
-    if (stored) {
+    async function loadConfigs() {
+      let loadedConfigs = null;
       try {
-        const parsed = JSON.parse(stored);
-        setConfigs({
-          metas: parsed.metas || {},
-          dias_alerta_followup: parsed.dias_alerta_followup !== undefined ? parsed.dias_alerta_followup : 3,
-        });
-      } catch (e) {
-        console.error("Erro ao ler configurações locais:", e);
+        const { data } = await db.configuracoes.get();
+        if (data) {
+          loadedConfigs = data;
+        }
+      } catch (dbErr) {
+        console.error("Erro ao carregar configurações do Supabase:", dbErr);
       }
-    } else {
-      // Migrar meta antiga se houver
-      const oldMeta = localStorage.getItem("rg_local_meta_faturamento");
-      if (oldMeta) {
-        const d = new Date();
-        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        const initialMetas = { [monthKey]: Number(oldMeta) };
-        const initialConfigs = { metas: initialMetas, dias_alerta_followup: 3 };
-        setConfigs(initialConfigs);
-        localStorage.setItem("rg_local_configuracoes", JSON.stringify(initialConfigs));
+
+      if (!loadedConfigs) {
+        const stored = localStorage.getItem("rg_local_configuracoes");
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            loadedConfigs = {
+              metas: parsed.metas || {},
+              dias_alerta_followup: parsed.dias_alerta_followup !== undefined ? parsed.dias_alerta_followup : 3,
+            };
+            // Migrar para o banco
+            await db.configuracoes.upsert(loadedConfigs);
+          } catch (e) {
+            console.error("Erro ao migrar local configs:", e);
+          }
+        } else {
+          // Migrar meta antiga se houver
+          const oldMeta = localStorage.getItem("rg_local_meta_faturamento");
+          if (oldMeta) {
+            const d = new Date();
+            const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+            const initialMetas = { [monthKey]: Number(oldMeta) };
+            const initialConfigs = { metas: initialMetas, dias_alerta_followup: 3 };
+            loadedConfigs = initialConfigs;
+            await db.configuracoes.upsert(loadedConfigs);
+          }
+        }
+      }
+
+      if (loadedConfigs) {
+        setConfigs(loadedConfigs);
       }
     }
+
+    loadConfigs();
 
     // Carregar taxonomia de produtos
     const catsStored = localStorage.getItem("rg_local_categorias_produtos");
@@ -159,17 +181,15 @@ export default function Configuracoes() {
     setTimeout(() => setSuccessMsg(""), 3000);
   };
 
-  const saveConfigs = (newConfigs) => {
-    setConfigs(newConfigs);
-    localStorage.setItem("rg_local_configuracoes", JSON.stringify(newConfigs));
-    
-    // Sincronizar também o valor da meta do mês atual com a chave antiga para compatibilidade se necessário
-    const currentMonthKey = new Date().toISOString().substring(0, 7);
-    if (newConfigs.metas[currentMonthKey]) {
-      localStorage.setItem("rg_local_meta_faturamento", newConfigs.metas[currentMonthKey]);
+  const saveConfigs = async (newConfigs) => {
+    try {
+      setConfigs(newConfigs);
+      await db.configuracoes.upsert(newConfigs);
+      setSuccessMsg("Configurações salvas com sucesso!");
+    } catch (e) {
+      console.error("Erro ao salvar configurações no banco:", e);
+      alert("Erro ao salvar configurações no banco de dados.");
     }
-
-    setSuccessMsg("Configurações salvas com sucesso!");
     setTimeout(() => setSuccessMsg(""), 3000);
   };
 

@@ -57,3 +57,8 @@
   - [x] **Divisão de Vendas:** Totalizar separadamente vendas de produtos (peças) vs. serviços, segmentados por mês e ano.
   - [x] **Gráfico de Receitas Mensal:** Exibição mensal das receitas.
   - [x] **Métrica de Crescimento:** Mostrar o percentual (%) de crescimento mensal comparado ao mês anterior.
+- [x] **Melhorias de Julho de 2026:**
+  - [x] **Filtro de Período (Mês/Ano):** Seletor dinâmico no topo do dashboard para conferência de meses fechados.
+  - [x] **Orçamentos com Datas Retroativas:** Cadastro flexível de data de emissão propagada para OS automática e financeiro.
+  - [x] **Tooltip de Faturamento no Gráfico:** Hover dinâmico com valor monetário real acima de cada coluna.
+  - [x] **Segurança:** Remoção completa dos modos de bypass de autenticação local.

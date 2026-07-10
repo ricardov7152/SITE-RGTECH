@@ -8,22 +8,6 @@ export default function ProtectedRoute({ children }) {
 
   useEffect(() => {
     async function checkAuth() {
-      // 1. Verificar se há sessão de teste (Offline Dev Bypass)
-      const devSessionStr = localStorage.getItem("rgtech_session");
-      if (devSessionStr) {
-        try {
-          const devSession = JSON.parse(devSessionStr);
-          if (devSession && devSession.expires_at > Date.now()) {
-            setIsAuthenticated(true);
-            setLoading(false);
-            return;
-          } else {
-            localStorage.removeItem("rgtech_session");
-          }
-        } catch (e) {
-          localStorage.removeItem("rgtech_session");
-        }
-      }
 
       // 2. Verificar sessão no Supabase Auth
       try {

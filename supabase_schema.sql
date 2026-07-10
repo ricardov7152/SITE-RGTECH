@@ -219,5 +219,14 @@ ALTER TABLE public.bancos ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Permitir tudo autenticado (Bancos)" ON public.bancos;
 CREATE POLICY "Permitir tudo autenticado (Bancos)" ON public.bancos FOR ALL TO authenticated USING (true);
 
+-- 9. Tabela de Configurações Gerais (ERP / Metas)
+CREATE TABLE IF NOT EXISTS public.configuracoes (
+    chave TEXT PRIMARY KEY,
+    valor JSONB NOT NULL,
+    atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
 
+ALTER TABLE public.configuracoes ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Permitir tudo autenticado (Configuracoes)" ON public.configuracoes;
+CREATE POLICY "Permitir tudo autenticado (Configuracoes)" ON public.configuracoes FOR ALL TO authenticated USING (true);
