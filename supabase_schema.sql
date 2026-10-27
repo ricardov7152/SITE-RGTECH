@@ -1,4 +1,4 @@
--- Script de criação do banco de dados para RG TECH Computadores e ERP
+-- Script de criação e blindagem do banco de dados para RG TECH Computadores e ERP
 
 -- Habilitar a extensão UUID (caso não esteja)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -129,13 +129,6 @@ CREATE TABLE IF NOT EXISTS public.financeiro (
     observacoes TEXT
 );
 
--- Habilitar RLS (Segurança) mas permitir acesso para simplificar no dev
-ALTER TABLE public.clientes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.produtos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.orcamentos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.orcamento_itens ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.financeiro ENABLE ROW LEVEL SECURITY;
-
 -- 6. Tabela de Ordem de Serviço
 CREATE TABLE IF NOT EXISTS public.ordem_servico (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -173,10 +166,45 @@ CREATE TABLE IF NOT EXISTS public.os_itens (
     status_garantia TEXT CHECK (status_garantia IN ('ativa', 'expirada')) DEFAULT 'ativa'
 );
 
+-- 8. Tabela de Bancos / Contas Bancárias (Dinâmica)
+CREATE TABLE IF NOT EXISTS public.bancos (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nome TEXT UNIQUE NOT NULL,
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- 9. Tabela de Configurações Gerais (ERP / Metas)
+CREATE TABLE IF NOT EXISTS public.configuracoes (
+    chave TEXT PRIMARY KEY,
+    valor JSONB NOT NULL,
+    atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- ============================================================================
+-- BLINDAGEM DE SEGURANÇA RLS (ROW LEVEL SECURITY) — ZERO ACESSO ANÔNIMO
+-- ============================================================================
+ALTER TABLE public.clientes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.produtos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orcamentos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orcamento_itens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.financeiro ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ordem_servico ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.os_itens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bancos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.configuracoes ENABLE ROW LEVEL SECURITY;
 
--- Remover políticas existentes para evitar erros ao rodar o script novamente
+-- Revogar explicitamente qualquer permissão do role público 'anon'
+REVOKE ALL ON TABLE public.clientes FROM anon;
+REVOKE ALL ON TABLE public.produtos FROM anon;
+REVOKE ALL ON TABLE public.orcamentos FROM anon;
+REVOKE ALL ON TABLE public.orcamento_itens FROM anon;
+REVOKE ALL ON TABLE public.financeiro FROM anon;
+REVOKE ALL ON TABLE public.ordem_servico FROM anon;
+REVOKE ALL ON TABLE public.os_itens FROM anon;
+REVOKE ALL ON TABLE public.bancos FROM anon;
+REVOKE ALL ON TABLE public.configuracoes FROM anon;
+
+-- Remover políticas antigas para recriação limpa
 DROP POLICY IF EXISTS "Permitir tudo anon (Clientes)" ON public.clientes;
 DROP POLICY IF EXISTS "Permitir tudo autenticado (Clientes)" ON public.clientes;
 
@@ -198,35 +226,33 @@ DROP POLICY IF EXISTS "Permitir tudo autenticado (Ordem Servico)" ON public.orde
 DROP POLICY IF EXISTS "Permitir tudo anon (OS Itens)" ON public.os_itens;
 DROP POLICY IF EXISTS "Permitir tudo autenticado (OS Itens)" ON public.os_itens;
 
--- Políticas de acesso restrito (somente usuários autenticados via login)
-CREATE POLICY "Permitir tudo autenticado (Clientes)" ON public.clientes FOR ALL TO authenticated USING (true);
-CREATE POLICY "Permitir tudo autenticado (Produtos)" ON public.produtos FOR ALL TO authenticated USING (true);
-CREATE POLICY "Permitir tudo autenticado (Orçamentos)" ON public.orcamentos FOR ALL TO authenticated USING (true);
-CREATE POLICY "Permitir tudo autenticado (Itens)" ON public.orcamento_itens FOR ALL TO authenticated USING (true);
-CREATE POLICY "Permitir tudo autenticado (Financeiro)" ON public.financeiro FOR ALL TO authenticated USING (true);
-CREATE POLICY "Permitir tudo autenticado (Ordem Servico)" ON public.ordem_servico FOR ALL TO authenticated USING (true);
-CREATE POLICY "Permitir tudo autenticado (OS Itens)" ON public.os_itens FOR ALL TO authenticated USING (true);
-
--- 8. Tabela de Bancos / Contas Bancárias (Dinâmica)
-CREATE TABLE IF NOT EXISTS public.bancos (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    nome TEXT UNIQUE NOT NULL,
-    criado_em TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
-);
-
-ALTER TABLE public.bancos ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS "Permitir tudo autenticado (Bancos)" ON public.bancos;
-CREATE POLICY "Permitir tudo autenticado (Bancos)" ON public.bancos FOR ALL TO authenticated USING (true);
-
--- 9. Tabela de Configurações Gerais (ERP / Metas)
-CREATE TABLE IF NOT EXISTS public.configuracoes (
-    chave TEXT PRIMARY KEY,
-    valor JSONB NOT NULL,
-    atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
-);
-
-ALTER TABLE public.configuracoes ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS "Permitir tudo autenticado (Configuracoes)" ON public.configuracoes;
-CREATE POLICY "Permitir tudo autenticado (Configuracoes)" ON public.configuracoes FOR ALL TO authenticated USING (true);
+
+-- Políticas estritas: exigem sessão autenticada tanto para leitura (USING) quanto escrita (WITH CHECK)
+CREATE POLICY "Permitir tudo autenticado (Clientes)" ON public.clientes
+    FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Permitir tudo autenticado (Produtos)" ON public.produtos
+    FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Permitir tudo autenticado (Orçamentos)" ON public.orcamentos
+    FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Permitir tudo autenticado (Itens)" ON public.orcamento_itens
+    FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Permitir tudo autenticado (Financeiro)" ON public.financeiro
+    FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Permitir tudo autenticado (Ordem Servico)" ON public.ordem_servico
+    FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Permitir tudo autenticado (OS Itens)" ON public.os_itens
+    FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Permitir tudo autenticado (Bancos)" ON public.bancos
+    FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Permitir tudo autenticado (Configuracoes)" ON public.configuracoes
+    FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');

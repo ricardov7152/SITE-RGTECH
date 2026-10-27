@@ -48,14 +48,12 @@ export default function LandingPage() {
 
           {/* CTA buttons & Mobile Menu Toggle */}
           <div className="flex gap-3 md:gap-4 items-center shrink-0">
-            <Link to="/login" className="px-4 py-2 border border-white/10 hover:border-[#0029F5]/30 text-white font-bold rounded-xl hover:bg-[#0029F5]/5 transition-all text-xs uppercase tracking-wider">
-              LOGIN
-            </Link>
-            <a href={WA_LINK} target="_blank" rel="noreferrer" className="px-4 py-2 bg-[#0029F5] text-white font-bold rounded-xl hover:bg-[#19DDFF] hover:text-[#05050c] hover:shadow-[0_0_25px_rgba(25,221,255,0.45)] transition-all text-xs uppercase tracking-wider">
+            <a href={WA_LINK} target="_blank" rel="noreferrer" className="px-5 py-2.5 bg-[#0029F5] text-white font-bold rounded-xl hover:bg-[#19DDFF] hover:text-[#05050c] hover:shadow-[0_0_25px_rgba(25,221,255,0.45)] transition-all text-xs uppercase tracking-wider">
               ORÇAMENTO
             </a>
             <button 
               className="md:hidden text-white p-2 hover:bg-white/5 rounded-xl" 
+              aria-label="Abrir menu de navegação"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               <span className="material-symbols-outlined text-2xl">{isMenuOpen ? "close" : "menu"}</span>
@@ -79,7 +77,6 @@ export default function LandingPage() {
                 </a>
               );
             })}
-            <Link className="text-slate-400 hover:text-[#19DDFF] font-bold uppercase text-sm tracking-wider py-1" to="/login" onClick={() => setIsMenuOpen(false)}>LOGIN</Link>
           </div>
         )}
       </nav>
@@ -120,8 +117,10 @@ export default function LandingPage() {
               <div className="absolute inset-0 bg-[#0029F5]/10 rounded-3xl blur-[80px] group-hover:bg-[#19DDFF]/10 transition-all duration-700"></div>
               <img 
                 alt="PC Gamer RG TECH" 
+                fetchPriority="high"
+                decoding="async"
                 className="w-full h-full object-contain rounded-2xl relative z-10 drop-shadow-[0_10px_30px_rgba(0,41,245,0.15)] group-hover:scale-101 transition-transform duration-500" 
-                src={`/pc.png?v=${Date.now()}`} 
+                src="/pc.png" 
               />
             </div>
           </div>
@@ -352,8 +351,11 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-        <div className="container mx-auto max-w-7xl mt-12 pt-8 border-t border-white/5 text-center text-slate-600 text-xs">
-          © 2026 RG TECH COMPUTADORES. Todos os direitos reservados.
+        <div className="container mx-auto max-w-7xl mt-12 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-600 text-xs">
+          <span>© 2026 RG TECH COMPUTADORES. Todos os direitos reservados.</span>
+          <Link to="/login" className="text-slate-700 hover:text-slate-400 transition-colors text-[11px]">
+            Área Técnica
+          </Link>
         </div>
       </footer>
 

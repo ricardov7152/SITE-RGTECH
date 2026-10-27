@@ -8,6 +8,32 @@ export const supabase = createClient(
   supabaseAnonKey || 'placeholder'
 );
 
+/**
+ * Gera o próximo ID sequencial (ex: ORC-2026-1001 ou OS-2026-1001)
+ * consultando o maior número já utilizado no ano corrente (max + 1),
+ * evitando colisões de chave primária caso registros antigos sejam excluídos.
+ */
+async function getNextSequentialId(table, column, prefix) {
+  const { data, error } = await supabase
+    .from(table)
+    .select(column)
+    .like(column, `${prefix}%`);
+
+  if (error) throw error;
+
+  let maxNum = 1000;
+  for (const row of data || []) {
+    const val = row[column] || '';
+    const parts = val.split('-');
+    const num = parseInt(parts[parts.length - 1], 10);
+    if (!Number.isNaN(num) && num > maxNum) {
+      maxNum = num;
+    }
+  }
+
+  return `${prefix}${maxNum + 1}`;
+}
+
 // --- OBJETO CENTRAL DE CONSULTAS DO SISTEMA (API) ---
 export const db = {
   // ── Clientes ──
@@ -125,8 +151,7 @@ export const db = {
     insert: async (orcamento, itens) => {
       try {
         const year = new Date().getFullYear();
-        const { count } = await supabase.from('orcamentos').select('*', { count: 'exact', head: true });
-        const orcId = orcamento.id || `ORC-${year}-${1000 + (count || 0) + 1}`;
+        const orcId = orcamento.id || await getNextSequentialId('orcamentos', 'id', `ORC-${year}-`);
         
         const newOrcamento = { ...orcamento, id: orcId };
         
@@ -402,9 +427,7 @@ export const db = {
         orcItens = dbItens || [];
 
         const year = new Date().getFullYear();
-        const { count: dbCount } = await supabase.from('ordem_servico').select('*', { count: 'exact', head: true });
-        const count = dbCount || 0;
-        const numeroOs = `OS-${year}-${1000 + count + 1}`;
+        const numeroOs = await getNextSequentialId('ordem_servico', 'numero_os', `OS-${year}-`);
 
         let prazoDias = 5;
         if (orcamento.prazo_entrega) {
