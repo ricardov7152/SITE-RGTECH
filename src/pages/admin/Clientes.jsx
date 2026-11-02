@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { db } from "../../services/supabase";
 import { Plus, Search, Edit2, Trash2, X, Users, MessageSquare, Gift, Eye } from "lucide-react";
 
@@ -214,7 +214,7 @@ export default function Clientes() {
         </div>
         <button 
           onClick={handleOpenNew}
-          className="flex items-center gap-2 bg-[#2D2B7A] hover:bg-[#4A47FF] px-4 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all"
+          className="flex items-center gap-2 bg-[#052659] hover:bg-[#5483B3] px-4 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all"
         >
           <Plus size={16} /> Novo Cliente
         </button>
@@ -229,14 +229,14 @@ export default function Clientes() {
             <input 
               type="text" 
               placeholder="Buscar por nome, CPF/CNPJ ou nome fantasia..."
-              className="w-full bg-white/5 border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+              className="w-full bg-white/5 border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="flex gap-3">
             <select 
-              className="bg-[#0D0D0D] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+              className="bg-[#021024] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
               value={filterTipo}
               onChange={(e) => setFilterTipo(e.target.value)}
             >
@@ -245,7 +245,7 @@ export default function Clientes() {
               <option value="PJ">Pessoa Jurídica (PJ)</option>
             </select>
             <select 
-              className="bg-[#0D0D0D] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+              className="bg-[#021024] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
               value={filterStatusCliente}
               onChange={(e) => setFilterStatusCliente(e.target.value)}
             >
@@ -255,7 +255,7 @@ export default function Clientes() {
               <option value="Inativo">Inativo</option>
             </select>
             <select 
-              className="bg-[#0D0D0D] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+              className="bg-[#021024] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
               value={filterOrigem}
               onChange={(e) => setFilterOrigem(e.target.value)}
             >
@@ -328,7 +328,7 @@ export default function Clientes() {
                         )}
 
                         {c.observacoes_internas && (
-                          <span className="block text-[11px] text-slate-400 italic font-normal mt-1.5 border-l-2 border-[#2D2B7A] pl-2 max-w-[200px] truncate" title={c.observacoes_internas}>
+                          <span className="block text-[11px] text-slate-400 italic font-normal mt-1.5 border-l-2 border-[#052659] pl-2 max-w-[200px] truncate" title={c.observacoes_internas}>
                             Obs: {c.observacoes_internas}
                           </span>
                         )}
@@ -418,7 +418,7 @@ export default function Clientes() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="glass w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             {/* Modal Header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-white/5 bg-[#0D0D0D]">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-white/5 bg-[#021024]">
               <h3 className="font-bold text-white text-lg">
                 {editingId ? "Editar Cliente" : "Adicionar Novo Cliente"}
               </h3>
@@ -443,7 +443,7 @@ export default function Clientes() {
                       value="PF" 
                       checked={tipoPessoa === "PF"} 
                       onChange={() => setTipoPessoa("PF")}
-                      className="accent-[#2d2b7a]"
+                      className="accent-[#052659]"
                     />
                     Pessoa Física (PF)
                   </label>
@@ -454,7 +454,7 @@ export default function Clientes() {
                       value="PJ" 
                       checked={tipoPessoa === "PJ"} 
                       onChange={() => setTipoPessoa("PJ")}
-                      className="accent-[#2d2b7a]"
+                      className="accent-[#052659]"
                     />
                     Pessoa Jurídica (PJ)
                   </label>
@@ -471,7 +471,7 @@ export default function Clientes() {
                     type="text" 
                     required 
                     placeholder={tipoPessoa === "PJ" ? "Ex: RG Tech LTDA" : "Ex: Ricardo Bertollo"}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                     value={nomeCompleto}
                     onChange={(e) => setNomeCompleto(e.target.value)}
                   />
@@ -483,7 +483,7 @@ export default function Clientes() {
                   <input 
                     type="text" 
                     placeholder={tipoPessoa === "PJ" ? "00.000.000/0001-00" : "000.000.000-00"}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                     value={cpfCnpj}
                     onChange={(e) => {
                       let val = e.target.value.replace(/\D/g, "");
@@ -518,7 +518,7 @@ export default function Clientes() {
                     type="text" 
                     required
                     placeholder="Ex: (66) 9 9929-8666"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                     value={telefone}
                     onChange={(e) => {
                       let val = e.target.value.replace(/\D/g, "");
@@ -541,7 +541,7 @@ export default function Clientes() {
                   <input 
                     type="email" 
                     placeholder="Ex: cliente@email.com"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -558,7 +558,7 @@ export default function Clientes() {
                       <input 
                         type="text" 
                         placeholder="Ex: RG Tech Computadores"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                         value={nomeFantasia}
                         onChange={(e) => setNomeFantasia(e.target.value)}
                       />
@@ -568,7 +568,7 @@ export default function Clientes() {
                       <input 
                         type="text" 
                         placeholder="Inscrição Estadual"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                         value={inscricaoEstadual}
                         onChange={(e) => setInscricaoEstadual(e.target.value)}
                       />
@@ -578,7 +578,7 @@ export default function Clientes() {
                       <input 
                         type="text" 
                         placeholder="Nome do responsável na empresa"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                         value={nomeResponsavel}
                         onChange={(e) => setNomeResponsavel(e.target.value)}
                       />
@@ -596,7 +596,7 @@ export default function Clientes() {
                     <input 
                       type="text" 
                       placeholder="Ex: Rua Celeste, 670"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                       value={endereco}
                       onChange={(e) => setEndereco(e.target.value)}
                     />
@@ -606,7 +606,7 @@ export default function Clientes() {
                     <input 
                       type="text" 
                       placeholder="Ex: Centro"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                       value={bairro}
                       onChange={(e) => setBairro(e.target.value)}
                     />
@@ -618,7 +618,7 @@ export default function Clientes() {
                     <input 
                       type="text" 
                       placeholder="Ex: Sorriso"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                       value={cidade}
                       onChange={(e) => setCidade(e.target.value)}
                     />
@@ -626,7 +626,7 @@ export default function Clientes() {
                   <div>
                     <label className="block text-xs font-semibold text-slate-400 mb-1">Estado</label>
                     <select 
-                      className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+                      className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
                       value={estado}
                       onChange={(e) => setEstado(e.target.value)}
                     >
@@ -669,7 +669,7 @@ export default function Clientes() {
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Origem (Como chegou) *</label>
                   <select 
                     required
-                    className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+                    className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
                     value={origem}
                     onChange={(e) => setOrigem(e.target.value)}
                   >
@@ -694,7 +694,7 @@ export default function Clientes() {
                     </label>
                     <input 
                       type="date" 
-                      className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF]"
+                      className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#5483B3]"
                       value={dataNascimentoFundacao}
                       onChange={(e) => setDataNascimentoFundacao(e.target.value)}
                     />
@@ -704,7 +704,7 @@ export default function Clientes() {
                     <input 
                       type="date" 
                       required
-                      className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF]"
+                      className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#5483B3]"
                       value={dataCadastro}
                       onChange={(e) => setDataCadastro(e.target.value)}
                     />
@@ -716,7 +716,7 @@ export default function Clientes() {
                     <label className="block text-xs font-semibold text-slate-400 mb-1">Status do Cliente *</label>
                     <select 
                       required
-                      className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF]"
+                      className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#5483B3]"
                       value={statusCliente}
                       onChange={(e) => setStatusCliente(e.target.value)}
                     >
@@ -730,7 +730,7 @@ export default function Clientes() {
                     <input 
                       type="text" 
                       placeholder="Ex: Agro, Gamer, Recorrente"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                       value={tags}
                       onChange={(e) => setTags(e.target.value)}
                     />
@@ -742,7 +742,7 @@ export default function Clientes() {
                     <label className="block text-xs font-semibold text-slate-400 mb-1">Quem Indicou? *</label>
                     <select 
                       required
-                      className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF]"
+                      className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#5483B3]"
                       value={indicadoPorId}
                       onChange={(e) => setIndicadoPorId(e.target.value)}
                     >
@@ -765,7 +765,7 @@ export default function Clientes() {
                     id="consentimentoMarketing"
                     checked={consentimentoMarketing} 
                     onChange={(e) => setConsentimentoMarketing(e.target.checked)}
-                    className="w-4 h-4 rounded border-white/10 bg-[#0d0d0d] text-[#2d2b7a] focus:ring-[#2d2b7a] focus:ring-offset-[#0d0d0d] focus:ring-2"
+                    className="w-4 h-4 rounded border-white/10 bg-[#021024] text-[#052659] focus:ring-[#052659] focus:ring-offset-[#021024] focus:ring-2"
                   />
                   <label htmlFor="consentimentoMarketing" className="text-sm font-medium text-slate-300 cursor-pointer select-none">
                     Autoriza envio de mensagens de marketing (novidades, promoções, lembretes de aniversário)
@@ -777,7 +777,7 @@ export default function Clientes() {
                   <textarea 
                     rows="3" 
                     placeholder="Ex: Prefere contato à tarde. Sempre pede desconto em peças. Indicou 3 clientes."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] resize-vertical"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] resize-vertical"
                     value={observacoesInternas}
                     onChange={(e) => setObservacoesInternas(e.target.value)}
                   />
@@ -795,7 +795,7 @@ export default function Clientes() {
                 </button>
                 <button 
                   type="submit" 
-                  className="px-6 py-2.5 bg-[#2D2B7A] hover:bg-[#4A47FF] text-white font-bold text-sm rounded-xl shadow-lg transition-all"
+                  className="px-6 py-2.5 bg-[#052659] hover:bg-[#5483B3] text-white font-bold text-sm rounded-xl shadow-lg transition-all"
                 >
                   {editingId ? "Salvar Alterações" : "Cadastrar Cliente"}
                 </button>
@@ -869,7 +869,7 @@ export default function Clientes() {
             <div className="absolute inset-0 -z-10" onClick={() => setFichaOpen(false)} />
             
             {/* Panel */}
-            <div className="glass w-full max-w-lg h-full shadow-2xl flex flex-col bg-[#0D0D0D] border-l border-white/5 animate-slideLeft overflow-hidden">
+            <div className="glass w-full max-w-lg h-full shadow-2xl flex flex-col bg-[#021024] border-l border-white/5 animate-slideLeft overflow-hidden">
               {/* Header */}
               <div className="p-6 border-b border-white/5 flex justify-between items-center">
                 <div>
@@ -1021,7 +1021,7 @@ export default function Clientes() {
                       {timelineEvents.map((ev, idx) => (
                         <div key={idx} className="relative">
                           {/* Dot indicator */}
-                          <div className={`absolute -left-[26px] top-1 w-3 h-3 rounded-full border-2 border-[#0D0D0D] ${
+                          <div className={`absolute -left-[26px] top-1 w-3 h-3 rounded-full border-2 border-[#021024] ${
                             ev.type === "cadastro" ? "bg-blue-500" :
                             ev.type?.includes("aprovado") || ev.type?.includes("pago") ? "bg-emerald-500" :
                             ev.type?.includes("recusado") ? "bg-red-500" :

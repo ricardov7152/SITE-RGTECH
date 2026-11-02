@@ -20,10 +20,10 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="overflow-x-hidden bg-[#05050c] text-[#e2e2e2] font-inter selection:bg-[#19DDFF]/30 selection:text-white">
+    <div className="overflow-x-hidden bg-gradient-to-b from-[#021024] via-[#052659] to-[#021024] text-[#e2e2e2] font-inter selection:bg-[#C1E8FF]/30 selection:text-white">
 
       {/* ── TopNavBar ── */}
-      <nav className="fixed top-0 left-0 w-full px-4 md:px-8 py-2 bg-[#05050c]/80 backdrop-blur-xl border-b border-white/5 shadow-[0_4px_30px_rgba(0,41,245,0.03)] z-50 transition-all duration-300">
+      <nav className="fixed top-0 left-0 w-full px-4 md:px-8 py-2 bg-gradient-to-r from-[#021024]/90 via-[#052659]/85 to-[#021024]/90 backdrop-blur-xl border-b border-[#7DA0CA]/20 shadow-[0_4px_30px_rgba(2,16,36,0.45)] z-50 transition-all duration-300">
         <div className="flex justify-between items-center h-full max-w-7xl mx-auto">
           {/* Logo */}
           <a href="#" className="shrink-0 group">
@@ -37,7 +37,7 @@ export default function LandingPage() {
               return (
                 <a 
                   key={id}
-                  className="text-slate-400 font-bold tracking-wider hover:text-[#19DDFF] transition-colors duration-300 text-xs uppercase" 
+                  className="text-[#7DA0CA] font-bold tracking-wider hover:text-[#C1E8FF] transition-colors duration-300 text-xs uppercase" 
                   href={`#${id}`}
                 >
                   {label}
@@ -48,11 +48,11 @@ export default function LandingPage() {
 
           {/* CTA buttons & Mobile Menu Toggle */}
           <div className="flex gap-3 md:gap-4 items-center shrink-0">
-            <a href={WA_LINK} target="_blank" rel="noreferrer" className="px-5 py-2.5 bg-[#0029F5] text-white font-bold rounded-xl hover:bg-[#19DDFF] hover:text-[#05050c] hover:shadow-[0_0_25px_rgba(25,221,255,0.45)] transition-all text-xs uppercase tracking-wider">
+            <a href={WA_LINK} target="_blank" rel="noreferrer" className="px-5 py-2.5 bg-gradient-to-r from-[#052659] via-[#5483B3] to-[#7DA0CA] text-white font-bold rounded-xl border border-[#C1E8FF]/30 hover:from-[#5483B3] hover:to-[#C1E8FF] hover:text-[#021024] hover:shadow-[0_0_25px_rgba(193,232,255,0.45)] transition-all text-xs uppercase tracking-wider">
               ORÇAMENTO
             </a>
             <button 
-              className="md:hidden text-white p-2 hover:bg-white/5 rounded-xl" 
+              className="md:hidden text-white p-2 hover:bg-[#5483B3]/20 rounded-xl" 
               aria-label="Abrir menu de navegação"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
@@ -63,13 +63,13 @@ export default function LandingPage() {
 
         {/* Mobile Menu Dropdown */}
         {isMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 w-full bg-[#05050c]/95 backdrop-blur-2xl border-b border-white/5 py-6 px-6 flex flex-col gap-4 shadow-2xl animate-fadeIn">
+          <div className="md:hidden absolute top-full left-0 w-full bg-gradient-to-b from-[#021024]/98 to-[#052659]/98 backdrop-blur-2xl border-b border-[#7DA0CA]/25 py-6 px-6 flex flex-col gap-4 shadow-2xl animate-fadeIn">
             {["servicos:SERVIÇOS", "marcas:MARCAS", "sobre:SOBRE NÓS", "faq:FAQ"].map((item) => {
               const [id, label] = item.split(":");
               return (
                 <a 
                   key={id}
-                  className="text-slate-400 hover:text-[#19DDFF] font-bold uppercase text-sm tracking-wider py-1 border-b border-white/5" 
+                  className="text-[#7DA0CA] hover:text-[#C1E8FF] font-bold uppercase text-sm tracking-wider py-1 border-b border-[#7DA0CA]/15" 
                   href={`#${id}`} 
                   onClick={() => setIsMenuOpen(false)}
                 >
@@ -84,42 +84,42 @@ export default function LandingPage() {
       {/* ── Hero Section ── */}
       <section className="relative min-h-screen pt-36 pb-20 px-4 md:px-8 hero-gradient flex items-center overflow-hidden">
         {/* Glowing Blobs */}
-        <div className="absolute w-[350px] h-[350px] bg-[#0029F5]/10 blur-[120px] rounded-full top-1/4 -left-32 animate-pulse pointer-events-none"></div>
-        <div className="absolute w-[400px] h-[400px] bg-[#19DDFF]/5 blur-[130px] rounded-full bottom-1/4 right-0 pointer-events-none"></div>
+        <div className="absolute w-[380px] h-[380px] bg-[#5483B3]/25 blur-[130px] rounded-full top-1/4 -left-32 animate-pulse pointer-events-none"></div>
+        <div className="absolute w-[420px] h-[420px] bg-[#C1E8FF]/15 blur-[140px] rounded-full bottom-1/4 right-0 pointer-events-none"></div>
 
         <div className="container mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
           <div>
-            <span className="inline-block px-3 py-1 mb-6 border border-[#19DDFF]/20 text-[#19DDFF] text-[10px] font-bold tracking-widest uppercase rounded-lg bg-[#19DDFF]/5">
+            <span className="inline-block px-3.5 py-1.5 mb-6 border border-[#7DA0CA]/40 text-[#C1E8FF] text-[10px] font-bold tracking-widest uppercase rounded-lg bg-gradient-to-r from-[#052659]/80 to-[#5483B3]/40">
               Sorriso - Mato Grosso
             </span>
             <h1 className="text-4xl md:text-[52px] font-extrabold text-white mb-6 leading-tight tracking-tight">
-              Seu computador com problemas? Nós resolvemos <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#19DDFF] to-[#0029F5] drop-shadow-[0_0_20px_rgba(25,221,255,0.15)]">ainda hoje!</span>
+              Seu computador com problemas? Nós resolvemos <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C1E8FF] via-[#7DA0CA] to-[#5483B3] drop-shadow-[0_0_24px_rgba(193,232,255,0.25)]">ainda hoje!</span>
             </h1>
-            <p className="text-base md:text-[18px] text-slate-300 mb-10 max-w-lg leading-relaxed">
+            <p className="text-base md:text-[18px] text-[#C1E8FF]/85 mb-10 max-w-lg leading-relaxed">
               Assistência técnica especializada de alta performance em Sorriso-MT. Orçamento transparente, atendimento rápido e serviços com garantia real.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <a href={WA_LINK} target="_blank" rel="noreferrer"
-                className="px-8 py-4 bg-[#0029F5] text-white font-bold rounded-xl hover:bg-[#19DDFF] hover:text-[#05050c] hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(25,221,255,0.4)] transition-all text-center uppercase tracking-wider text-sm">
+                className="px-8 py-4 bg-gradient-to-r from-[#052659] via-[#5483B3] to-[#7DA0CA] text-white font-bold rounded-xl border border-[#C1E8FF]/30 hover:from-[#5483B3] hover:to-[#C1E8FF] hover:text-[#021024] hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(193,232,255,0.45)] transition-all text-center uppercase tracking-wider text-sm">
                 Solicitar Orçamento Grátis
               </a>
               <a href="#servicos"
-                className="px-8 py-4 border border-white/10 text-white font-bold rounded-xl hover:bg-white/5 hover:border-[#19DDFF]/20 hover:text-[#19DDFF] transition-all text-center uppercase tracking-wider text-sm">
+                className="px-8 py-4 border border-[#7DA0CA]/35 bg-[#021024]/50 text-[#C1E8FF] font-bold rounded-xl hover:bg-[#052659]/60 hover:border-[#C1E8FF]/60 hover:text-white transition-all text-center uppercase tracking-wider text-sm">
                 Nossos Serviços
               </a>
             </div>
-            <p className="mt-4 text-slate-500 text-xs">Sem compromisso. Avaliação e diagnóstico 100% gratuitos.</p>
+            <p className="mt-4 text-[#7DA0CA] text-xs">Sem compromisso. Avaliação e diagnóstico 100% gratuitos.</p>
           </div>
 
           {/* Hero image */}
           <div className="flex justify-center items-center relative">
             <div className="relative w-full max-w-lg group">
-              <div className="absolute inset-0 bg-[#0029F5]/10 rounded-3xl blur-[80px] group-hover:bg-[#19DDFF]/10 transition-all duration-700"></div>
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#052659]/50 via-[#5483B3]/30 to-[#C1E8FF]/20 rounded-3xl blur-[80px] group-hover:from-[#5483B3]/50 group-hover:to-[#C1E8FF]/35 transition-all duration-700"></div>
               <img 
                 alt="PC Gamer RG TECH" 
                 fetchPriority="high"
                 decoding="async"
-                className="w-full h-full object-contain rounded-2xl relative z-10 drop-shadow-[0_10px_30px_rgba(0,41,245,0.15)] group-hover:scale-101 transition-transform duration-500" 
+                className="w-full h-full object-contain rounded-2xl relative z-10 drop-shadow-[0_15px_35px_rgba(5,38,89,0.55)] group-hover:scale-101 transition-transform duration-500" 
                 src="/pc.png" 
               />
             </div>
@@ -127,18 +127,18 @@ export default function LandingPage() {
         </div>
 
         {/* Decorative Grid */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{ backgroundImage: "radial-gradient(#19DDFF 1px, transparent 1px)", backgroundSize: "32px 32px" }}>
+        <div className="absolute inset-0 opacity-[0.06] pointer-events-none"
+          style={{ backgroundImage: "radial-gradient(#C1E8FF 1px, transparent 1px)", backgroundSize: "32px 32px" }}>
         </div>
       </section>
 
       {/* ── Marcas Carrossel ── */}
-      <section className="py-12 bg-[#030308] border-y border-white/5 overflow-hidden scroll-mt-28" id="marcas">
-        <p className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-8">Especialistas em Marcas Líderes do Mercado</p>
+      <section className="py-12 bg-gradient-to-r from-[#021024] via-[#052659]/80 to-[#021024] border-y border-[#7DA0CA]/20 overflow-hidden scroll-mt-28" id="marcas">
+        <p className="text-center text-[10px] font-bold text-[#7DA0CA] uppercase tracking-widest mb-8">Especialistas em Marcas Líderes do Mercado</p>
         <div className="overflow-hidden">
           <div className="marquee-track">
             {[...marcas, ...marcas].map((marca, i) => (
-              <span key={i} className="text-white font-black text-2xl tracking-tighter opacity-30 hover:opacity-80 hover:text-[#19DDFF] transition-all duration-300 mx-12 shrink-0 cursor-default">
+              <span key={i} className="text-[#C1E8FF] font-black text-2xl tracking-tighter opacity-40 hover:opacity-100 hover:text-white transition-all duration-300 mx-12 shrink-0 cursor-default">
                 {marca}
               </span>
             ))}
@@ -147,20 +147,20 @@ export default function LandingPage() {
       </section>
 
       {/* ── Serviços Section ── */}
-      <section className="py-24 bg-[#070714] relative overflow-hidden" id="servicos">
+      <section className="py-24 bg-gradient-to-b from-[#021024] via-[#052659]/70 to-[#021024] relative overflow-hidden" id="servicos">
         {/* Background Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.02] pointer-events-none"
-          style={{ backgroundImage: "radial-gradient(#0029F5 1px, transparent 1px)", backgroundSize: "24px 24px" }}>
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{ backgroundImage: "radial-gradient(#7DA0CA 1px, transparent 1px)", backgroundSize: "24px 24px" }}>
         </div>
-        <div className="absolute w-[300px] h-[300px] bg-[#19DDFF]/5 blur-[100px] rounded-full -top-40 right-10 pointer-events-none"></div>
+        <div className="absolute w-[320px] h-[320px] bg-[#5483B3]/20 blur-[110px] rounded-full -top-40 right-10 pointer-events-none"></div>
 
         <div className="container mx-auto px-4 md:px-8 max-w-7xl relative z-10">
           <div className="flex flex-col md:flex-row justify-between md:items-end mb-16 gap-6">
             <div>
-              <span className="text-[10px] font-bold text-[#19DDFF] mb-3 block tracking-widest uppercase">NOSSAS SOLUÇÕES</span>
+              <span className="text-[10px] font-bold text-[#C1E8FF] mb-3 block tracking-widest uppercase">NOSSAS SOLUÇÕES</span>
               <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Serviços Profissionais</h2>
             </div>
-            <p className="text-slate-400 max-w-sm text-sm leading-relaxed">Diagnóstico de alta precisão e manutenção inteligente para extrair a máxima performance do seu hardware.</p>
+            <p className="text-[#7DA0CA] max-w-sm text-sm leading-relaxed">Diagnóstico de alta precisão e manutenção inteligente para extrair a máxima performance do seu hardware.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -172,13 +172,13 @@ export default function LandingPage() {
               { icon: "business_center", title: "Suporte Corporativo", desc: "Contratos de manutenção, suporte remoto ágil e consultoria em TI para pequenas e médias empresas." },
             ].map((s, i) => (
               <a key={i} href={WA_SERVICO(s.title)} target="_blank" rel="noreferrer"
-                className="glass p-6 rounded-2xl hover:border-[#19DDFF]/30 hover:bg-[#0029F5]/5 hover:shadow-[0_10px_30px_rgba(0,41,245,0.08)] transition-all duration-300 group flex flex-col">
-                <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mb-6 text-[#19DDFF] group-hover:bg-[#0029F5] group-hover:text-white transition-all duration-300 shrink-0">
+                className="glass p-6 rounded-2xl hover:border-[#C1E8FF]/50 hover:bg-gradient-to-br hover:from-[#052659]/90 hover:to-[#5483B3]/40 hover:-translate-y-1.5 hover:shadow-[0_14px_35px_rgba(84,131,179,0.28)] transition-all duration-300 group flex flex-col">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#052659] to-[#5483B3]/60 border border-[#7DA0CA]/30 rounded-xl flex items-center justify-center mb-6 text-[#C1E8FF] group-hover:from-[#5483B3] group-hover:to-[#C1E8FF] group-hover:text-[#021024] transition-all duration-300 shrink-0">
                   <span className="material-symbols-outlined text-2xl">{s.icon}</span>
                 </div>
-                <h3 className="text-base font-bold text-white mb-3 group-hover:text-[#19DDFF] transition-colors">{s.title}</h3>
-                <p className="text-slate-400 text-xs leading-relaxed mb-6 flex-1">{s.desc}</p>
-                <span className="text-[#19DDFF] font-bold text-xs flex items-center gap-2 group-hover:gap-4 transition-all mt-auto">
+                <h3 className="text-base font-bold text-white mb-3 group-hover:text-[#C1E8FF] transition-colors">{s.title}</h3>
+                <p className="text-[#C1E8FF]/75 text-xs leading-relaxed mb-6 flex-1">{s.desc}</p>
+                <span className="text-[#C1E8FF] font-bold text-xs flex items-center gap-2 group-hover:gap-4 transition-all mt-auto">
                   Solicitar <span className="material-symbols-outlined text-sm">arrow_forward</span>
                 </span>
               </a>
@@ -188,12 +188,12 @@ export default function LandingPage() {
       </section>
 
       {/* ── Sobre Nós / Benefícios Section ── */}
-      <section className="py-24 bg-[#05050f] relative overflow-hidden" id="sobre">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#0029F5]/5 blur-[160px] rounded-full pointer-events-none"></div>
+      <section className="py-24 bg-gradient-to-b from-[#021024] via-[#052659]/50 to-[#021024] relative overflow-hidden" id="sobre">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-[#5483B3]/15 blur-[160px] rounded-full pointer-events-none"></div>
 
         <div className="container mx-auto px-4 md:px-8 max-w-7xl relative z-10">
           <div className="text-center mb-16">
-            <span className="text-[10px] font-bold text-[#19DDFF] mb-3 block tracking-widest uppercase">Nossos Diferenciais</span>
+            <span className="text-[10px] font-bold text-[#C1E8FF] mb-3 block tracking-widest uppercase">Nossos Diferenciais</span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Confiança construída com excelência</h2>
           </div>
 
@@ -206,12 +206,12 @@ export default function LandingPage() {
               { icon: "handshake", title: "Foco em Solução PF & PJ", desc: "Atendimento humanizado para computadores domésticos e planos corporativos dedicados para empresas." },
               { icon: "star", title: "Referência 5 Estrelas no Google", desc: "Centenas de computadores otimizados com aprovação unânime de clientes da nossa região em Sorriso-MT." },
             ].map((b, i) => (
-              <div key={i} className="glass p-8 rounded-2xl hover:bg-white/[0.04] hover:border-[#0029F5]/20 transition-all duration-300">
-                <div className="text-[#19DDFF] mb-6">
+              <div key={i} className="glass p-8 rounded-2xl hover:border-[#C1E8FF]/40 hover:shadow-[0_12px_30px_rgba(5,38,89,0.5)] transition-all duration-300">
+                <div className="text-[#C1E8FF] mb-6">
                   <span className="material-symbols-outlined text-4xl">{b.icon}</span>
                 </div>
                 <h3 className="text-lg font-bold text-white mb-3">{b.title}</h3>
-                <p className="text-slate-400 text-xs leading-relaxed">{b.desc}</p>
+                <p className="text-[#C1E8FF]/75 text-xs leading-relaxed">{b.desc}</p>
               </div>
             ))}
           </div>
@@ -219,7 +219,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Prova Social Section ── */}
-      <section className="py-24 bg-[#070714] text-white relative overflow-hidden">
+      <section className="py-24 bg-gradient-to-b from-[#021024] via-[#052659]/75 to-[#021024] text-white relative overflow-hidden">
         <div className="container mx-auto px-4 md:px-8 max-w-7xl relative z-10">
           <h2 className="text-2xl md:text-3xl font-extrabold mb-12 text-center tracking-tight">A Assistência Preferida de Sorriso - MT</h2>
           
@@ -231,9 +231,9 @@ export default function LandingPage() {
               { valor: "5.0★", label: "Média de Avaliações Google" },
               { valor: "30min",label: "Tempo Médio de Retorno" },
             ].map((c, i) => (
-              <div key={i} className="glass p-6 rounded-2xl text-center border-white/5 hover:border-[#19DDFF]/10 transition-colors">
-                <div className="text-3xl md:text-4xl font-extrabold text-[#19DDFF] mb-1">{c.valor}</div>
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{c.label}</div>
+              <div key={i} className="glass p-6 rounded-2xl text-center border-[#7DA0CA]/25 hover:border-[#C1E8FF]/45 transition-colors">
+                <div className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#C1E8FF] to-[#7DA0CA] mb-1">{c.valor}</div>
+                <div className="text-[10px] font-bold text-[#7DA0CA] uppercase tracking-widest">{c.label}</div>
               </div>
             ))}
           </div>
@@ -246,15 +246,15 @@ export default function LandingPage() {
               { nome: "Denisson de Araujo", texto: "Serviço prestado com muita agilidade e excelência. Suporte pós-venda impecável, indico a todos." },
               { nome: "Gustavo Karnopp",  texto: "Serviço de ótima qualidade, entrega no prazo e explicação muito didática de todas as peças e serviços efetuados no meu PC. Excelente!" },
             ].map((d, i) => (
-              <div key={i} className="glass p-6 rounded-2xl flex flex-col hover:border-[#19DDFF]/10 transition-colors">
-                <div className="flex gap-1 text-[#19DDFF] mb-4">
+              <div key={i} className="glass p-6 rounded-2xl flex flex-col hover:border-[#C1E8FF]/40 transition-colors">
+                <div className="flex gap-1 text-[#C1E8FF] mb-4">
                   {[...Array(5)].map((_, j) => (
                     <span key={j} className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                   ))}
                 </div>
-                <p className="text-slate-300 italic text-xs leading-relaxed mb-6 flex-1">"{d.texto}"</p>
+                <p className="text-[#C1E8FF]/90 italic text-xs leading-relaxed mb-6 flex-1">"{d.texto}"</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-[#0029F5] flex items-center justify-center text-white font-bold text-xs shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#052659] to-[#5483B3] border border-[#C1E8FF]/30 flex items-center justify-center text-[#C1E8FF] font-bold text-xs shrink-0">
                     {d.nome[0]}
                   </div>
                   <span className="font-bold text-white text-xs">{d.nome}</span>
@@ -265,9 +265,9 @@ export default function LandingPage() {
 
           {/* CTA Instagram */}
           <div className="mt-16 text-center">
-            <p className="text-slate-400 text-xs mb-4">Acompanhe nossas montagens gamers e dicas diárias no Instagram</p>
+            <p className="text-[#7DA0CA] text-xs mb-4">Acompanhe nossas montagens gamers e dicas diárias no Instagram</p>
             <a href="https://www.instagram.com/rgtechpc/" target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white font-bold rounded-xl hover:scale-102 hover:shadow-[0_0_30px_rgba(253,29,29,0.25)] transition-all text-xs uppercase tracking-wider">
+              className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-[#052659] via-[#5483B3] to-[#7DA0CA] border border-[#C1E8FF]/30 text-white font-bold rounded-xl hover:scale-102 hover:shadow-[0_0_30px_rgba(193,232,255,0.35)] transition-all text-xs uppercase tracking-wider">
               <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
               </svg>
@@ -278,7 +278,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── FAQ Section ── */}
-      <section className="py-24 bg-[#05050f] text-white relative overflow-hidden" id="faq">
+      <section className="py-24 bg-gradient-to-b from-[#021024] via-[#052659]/45 to-[#021024] text-white relative overflow-hidden" id="faq">
         <div className="container mx-auto px-4 md:px-8 max-w-3xl relative z-10">
           <h2 className="text-2xl md:text-3xl font-extrabold text-center mb-16 tracking-tight">Perguntas Frequentes</h2>
           <div className="space-y-4">
@@ -289,9 +289,9 @@ export default function LandingPage() {
               { q: "Vocês trabalham com a venda de peças?", a: "Sim, trabalhamos com uma ampla linha de componentes, peças de reposição de grandes marcas, SSDs, memórias RAM e periféricos gamers." },
               { q: "Quanto tempo demora o diagnóstico técnico?", a: "Prezamos pelo menor tempo de laboratório possível. Geralmente, em poucas horas realizamos a análise completa e te enviamos o laudo detalhado." },
             ].map((item, i) => (
-              <div key={i} className="border-b border-white/5 py-6">
-                <p className="text-base md:text-lg font-bold text-white">{item.q}</p>
-                <p className="mt-3 text-slate-400 text-xs md:text-sm leading-relaxed">{item.a}</p>
+              <div key={i} className="border-b border-[#7DA0CA]/20 py-6">
+                <p className="text-base md:text-lg font-bold text-[#C1E8FF]">{item.q}</p>
+                <p className="mt-3 text-[#C1E8FF]/75 text-xs md:text-sm leading-relaxed">{item.a}</p>
               </div>
             ))}
           </div>
@@ -299,18 +299,18 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA Final ── */}
-      <section className="py-28 bg-[#030308] relative overflow-hidden">
+      <section className="py-28 bg-gradient-to-t from-[#021024] via-[#052659] to-[#021024] relative overflow-hidden">
         {/* Background glow blob */}
-        <div className="absolute w-[500px] h-[300px] bg-[#0029F5]/10 blur-[150px] bottom-0 left-1/2 -translate-x-1/2 pointer-events-none"></div>
+        <div className="absolute w-[500px] h-[300px] bg-[#5483B3]/25 blur-[150px] bottom-0 left-1/2 -translate-x-1/2 pointer-events-none"></div>
 
         <div className="container mx-auto px-4 text-center relative z-10">
           <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">
-            Pronto para resolver o problema do seu PC <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#19DDFF] to-[#0029F5] drop-shadow-[0_0_20px_rgba(25,221,255,0.15)]">ainda hoje?</span>
+            Pronto para resolver o problema do seu PC <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C1E8FF] via-[#7DA0CA] to-[#5483B3] drop-shadow-[0_0_20px_rgba(193,232,255,0.2)]">ainda hoje?</span>
           </h2>
-          <p className="text-sm md:text-base text-slate-400 mb-4 max-w-2xl mx-auto leading-relaxed">Avaliação transparente. Sem burocracia. Somente a solução correta para o seu uso diário.</p>
-          <p className="text-slate-500 text-xs mb-10 font-medium">⚡ Resposta rápida no WhatsApp em até 30 minutos | Diagnóstico Gratuito</p>
+          <p className="text-sm md:text-base text-[#C1E8FF]/80 mb-4 max-w-2xl mx-auto leading-relaxed">Avaliação transparente. Sem burocracia. Somente a solução correta para o seu uso diário.</p>
+          <p className="text-[#7DA0CA] text-xs mb-10 font-medium">⚡ Resposta rápida no WhatsApp em até 30 minutos | Diagnóstico Gratuito</p>
           <a href={WA_LINK} target="_blank" rel="noreferrer"
-            className="inline-flex items-center gap-4 px-10 py-5 bg-[#25D366] text-white font-bold text-lg md:text-xl rounded-2xl hover:scale-103 transition-all shadow-[0_10px_40px_rgba(37,211,102,0.3)]">
+            className="inline-flex items-center gap-4 px-10 py-5 bg-gradient-to-r from-[#052659] via-[#5483B3] to-[#7DA0CA] border border-[#C1E8FF]/40 text-white font-bold text-lg md:text-xl rounded-2xl hover:from-[#5483B3] hover:to-[#C1E8FF] hover:text-[#021024] hover:scale-103 transition-all shadow-[0_10px_40px_rgba(84,131,179,0.4)]">
             <span className="material-symbols-outlined text-3xl">chat</span>
             Falar com a RG TECH no WhatsApp
           </a>
@@ -318,42 +318,42 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="w-full py-16 px-4 md:px-8 bg-[#020205] border-t border-white/5">
+      <footer className="w-full py-16 px-4 md:px-8 bg-[#021024] border-t border-[#7DA0CA]/20">
         <div className="container mx-auto max-w-7xl grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="flex flex-col items-center text-center">
             <img src="/logo.png" alt="RG TECH" className="h-24 mb-2 object-contain" />
-            <p className="text-slate-500 text-xs max-w-[200px] leading-relaxed">Tecnologia que resolve<br />com transparência.</p>
+            <p className="text-[#7DA0CA] text-xs max-w-[200px] leading-relaxed">Tecnologia que resolve<br />com transparência.</p>
           </div>
           <div>
-            <p className="text-white font-bold mb-5 text-xs uppercase tracking-widest">Navegação</p>
+            <p className="text-[#C1E8FF] font-bold mb-5 text-xs uppercase tracking-widest">Navegação</p>
             <div className="flex flex-col gap-2.5">
               {["#servicos:SERVIÇOS", "#marcas:MARCAS", "#sobre:SOBRE NÓS", "#faq:FAQ"].map(item => {
                 const [href, label] = item.split(":");
-                return <a key={href} href={href} className="text-slate-500 text-xs hover:text-[#19DDFF] transition-colors font-medium">{label}</a>;
+                return <a key={href} href={href} className="text-[#7DA0CA] text-xs hover:text-[#C1E8FF] transition-colors font-medium">{label}</a>;
               })}
             </div>
           </div>
           <div>
-            <p className="text-white font-bold mb-5 text-xs uppercase tracking-widest">Contato</p>
-            <div className="flex flex-col gap-2.5 text-slate-500 text-xs font-medium">
-              <a href={WA_LINK} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">📱 (66) 9 9929-8666</a>
-              <a href="mailto:rgtechpc@gmail.com" className="hover:text-white transition-colors">✉️ rgtechpc@gmail.com</a>
-              <a href="https://instagram.com/rgtechpc" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">📸 @rgtechpc</a>
+            <p className="text-[#C1E8FF] font-bold mb-5 text-xs uppercase tracking-widest">Contato</p>
+            <div className="flex flex-col gap-2.5 text-[#7DA0CA] text-xs font-medium">
+              <a href={WA_LINK} target="_blank" rel="noreferrer" className="hover:text-[#C1E8FF] transition-colors">📱 (66) 9 9929-8666</a>
+              <a href="mailto:rgtechpc@gmail.com" className="hover:text-[#C1E8FF] transition-colors">✉️ rgtechpc@gmail.com</a>
+              <a href="https://instagram.com/rgtechpc" target="_blank" rel="noreferrer" className="hover:text-[#C1E8FF] transition-colors">📸 @rgtechpc</a>
             </div>
           </div>
           <div>
-            <p className="text-white font-bold mb-5 text-xs uppercase tracking-widest">Localização</p>
-            <div className="text-slate-500 text-xs flex flex-col gap-1.5 font-medium leading-relaxed">
-              <a href="https://maps.google.com/?q=Rua+Celeste+670+Sorriso+MT" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+            <p className="text-[#C1E8FF] font-bold mb-5 text-xs uppercase tracking-widest">Localização</p>
+            <div className="text-[#7DA0CA] text-xs flex flex-col gap-1.5 font-medium leading-relaxed">
+              <a href="https://maps.google.com/?q=Rua+Celeste+670+Sorriso+MT" target="_blank" rel="noreferrer" className="hover:text-[#C1E8FF] transition-colors">
                 📍 Rua Celeste, Nº 670, Bela Vista<br />Sorriso - MT
               </a>
-              <p className="mt-2 text-[11px] text-slate-600">⏰ Segunda a Sábado: 07:00 às 19:00</p>
+              <p className="mt-2 text-[11px] text-[#5483B3]">⏰ Segunda a Sábado: 07:00 às 19:00</p>
             </div>
           </div>
         </div>
-        <div className="container mx-auto max-w-7xl mt-12 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-600 text-xs">
+        <div className="container mx-auto max-w-7xl mt-12 pt-8 border-t border-[#7DA0CA]/15 flex flex-col sm:flex-row items-center justify-between gap-4 text-[#5483B3] text-xs">
           <span>© 2026 RG TECH COMPUTADORES. Todos os direitos reservados.</span>
-          <Link to="/login" className="text-slate-700 hover:text-slate-400 transition-colors text-[11px]">
+          <Link to="/login" className="text-[#5483B3] hover:text-[#C1E8FF] transition-colors text-[11px]">
             Área Técnica
           </Link>
         </div>
@@ -361,9 +361,9 @@ export default function LandingPage() {
 
       {/* ── WhatsApp Floating Button ── */}
       <a href={WA_LINK} target="_blank" rel="noreferrer"
-        className="fixed bottom-8 right-8 w-16 h-16 bg-[#25D366] rounded-full flex items-center justify-center text-white shadow-2xl hover:scale-110 transition-all z-[100] group">
+        className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-[#052659] via-[#5483B3] to-[#7DA0CA] border border-[#C1E8FF]/40 rounded-full flex items-center justify-center text-white shadow-[0_10px_30px_rgba(5,38,89,0.65)] hover:scale-110 transition-all z-[100] group">
         <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>chat</span>
-        <span className="absolute right-full mr-4 bg-[#05050c]/90 backdrop-blur border border-white/10 text-white px-4 py-2 rounded-xl font-bold text-xs tracking-wider uppercase whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-xl">
+        <span className="absolute right-full mr-4 bg-[#021024]/95 backdrop-blur border border-[#7DA0CA]/30 text-[#C1E8FF] px-4 py-2 rounded-xl font-bold text-xs tracking-wider uppercase whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-xl">
           Falar com técnico ⚡
         </span>
       </a>

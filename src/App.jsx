@@ -17,10 +17,10 @@ const OrdemServico = lazy(() => import("./pages/admin/OrdemServico"));
 
 function AdminLoader() {
   return (
-    <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center text-white font-inter">
+    <div className="min-h-screen bg-gradient-to-br from-[#021024] via-[#052659] to-[#021024] flex items-center justify-center text-white font-inter">
       <div className="text-center space-y-4">
-        <div className="w-10 h-10 border-4 border-[#0029F5] border-t-[#19DDFF] rounded-full animate-spin mx-auto"></div>
-        <p className="text-slate-400 text-xs uppercase tracking-widest font-semibold">Carregando módulo...</p>
+        <div className="w-10 h-10 border-4 border-[#5483B3] border-t-[#C1E8FF] rounded-full animate-spin mx-auto"></div>
+        <p className="text-[#7DA0CA] text-xs uppercase tracking-widest font-semibold">Carregando módulo...</p>
       </div>
     </div>
   );

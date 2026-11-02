@@ -98,12 +98,57 @@ CREATE TABLE IF NOT EXISTS public.orcamento_itens (
     garantia TEXT
 );
 
--- 5. Tabela Financeira
+-- 5. Tabela de Ordem de Serviço / Kanban de Manutenção
+CREATE TABLE IF NOT EXISTS public.ordem_servico (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    numero_os TEXT UNIQUE NOT NULL,
+    titulo TEXT DEFAULT 'Manutenção de Equipamento',
+    prioridade TEXT DEFAULT 'Média' CHECK (prioridade IN ('Baixa', 'Média', 'Alta', 'Urgente')),
+    posicao INTEGER DEFAULT 0,
+    orcamento_id TEXT REFERENCES public.orcamentos(id) ON DELETE SET NULL,
+    cliente_id UUID REFERENCES public.clientes(id) ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'recebido' CHECK (
+        status IN (
+            'recebido',
+            'em_analise',
+            'orcamento_enviado',
+            'aprovado_execucao',
+            'finalizado',
+            'aguardando_peca',
+            -- Status legados mantidos por compatibilidade
+            'em_diagnostico',
+            'em_execucao',
+            'pronto_retirada',
+            'entregue',
+            'cancelado'
+        )
+    ),
+    data_abertura DATE DEFAULT CURRENT_DATE,
+    prazo_entrega_dias INTEGER DEFAULT 5,
+    data_entrega_prevista DATE NOT NULL,
+    data_entrega_real DATE,
+    equipamento_tipo TEXT NOT NULL,
+    equipamento_marca TEXT NOT NULL,
+    equipamento_modelo TEXT,
+    equipamento_numero_serie TEXT,
+    acessorios_entregues TEXT,
+    problema_relatado TEXT,
+    tecnico_responsavel TEXT,
+    motivo_cancelamento TEXT,
+    observacoes_internas TEXT,
+    desconto NUMERIC(10,2) DEFAULT 0.00,
+    valor_total NUMERIC(10,2) DEFAULT 0.00,
+    condicoes_pagamento TEXT,
+    criado_em TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- 6. Tabela Financeira
 CREATE TABLE IF NOT EXISTS public.financeiro (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     tipo TEXT NOT NULL CHECK (tipo IN ('Receita', 'Despesa')),
-    categoria TEXT NOT NULL, -- ex: 'Orçamento', 'Peças', 'Aluguel', 'Marketing', etc.
+    categoria TEXT NOT NULL, -- ex: 'Manutenção', 'Orçamento', 'Peças', 'Aluguel', 'Marketing', etc.
     descricao TEXT NOT NULL,
     valor NUMERIC(10,2) NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('Pendente', 'Pago')) DEFAULT 'Pendente',
@@ -111,6 +156,7 @@ CREATE TABLE IF NOT EXISTS public.financeiro (
     -- Relacionamentos
     cliente_id UUID REFERENCES public.clientes(id) ON DELETE SET NULL,
     orcamento_id TEXT REFERENCES public.orcamentos(id) ON DELETE SET NULL,
+    os_id UUID REFERENCES public.ordem_servico(id) ON DELETE SET NULL,
     
     -- Datas
     data_vencimento DATE NOT NULL,
@@ -129,34 +175,13 @@ CREATE TABLE IF NOT EXISTS public.financeiro (
     observacoes TEXT
 );
 
--- 6. Tabela de Ordem de Serviço
-CREATE TABLE IF NOT EXISTS public.ordem_servico (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    numero_os TEXT UNIQUE NOT NULL,
-    orcamento_id TEXT REFERENCES public.orcamentos(id) ON DELETE SET NULL,
-    cliente_id UUID REFERENCES public.clientes(id) ON DELETE SET NULL,
-    status TEXT NOT NULL DEFAULT 'recebido' CHECK (status IN ('recebido', 'em_diagnostico', 'aguardando_peca', 'em_execucao', 'pronto_retirada', 'entregue', 'cancelado')),
-    data_abertura DATE DEFAULT CURRENT_DATE,
-    prazo_entrega_dias INTEGER DEFAULT 5,
-    data_entrega_prevista DATE NOT NULL,
-    data_entrega_real DATE,
-    equipamento_tipo TEXT NOT NULL,
-    equipamento_marca TEXT NOT NULL,
-    equipamento_modelo TEXT,
-    equipamento_numero_serie TEXT,
-    acessorios_entregues TEXT,
-    tecnico_responsavel TEXT,
-    motivo_cancelamento TEXT,
-    observacoes_internas TEXT,
-    criado_em TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
-    atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
-);
-
--- 7. Tabela de Itens da Ordem de Serviço
+-- 7. Tabela de Itens da Ordem de Serviço / Manutenção
 CREATE TABLE IF NOT EXISTS public.os_itens (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     os_id UUID REFERENCES public.ordem_servico(id) ON DELETE CASCADE,
     item_catalogo_id UUID REFERENCES public.produtos(id) ON DELETE SET NULL,
+    nome TEXT,
+    descricao TEXT,
     tipo TEXT NOT NULL CHECK (tipo IN ('Serviço', 'Peça')),
     quantidade INTEGER NOT NULL DEFAULT 1,
     valor_unitario NUMERIC(10,2) NOT NULL DEFAULT 0.00,
@@ -173,7 +198,7 @@ CREATE TABLE IF NOT EXISTS public.bancos (
     criado_em TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- 9. Tabela de Configurações Gerais (ERP / Metas)
+-- 9. Tabela de Configurações Gerais (ERP / Metas / Colunas Kanban)
 CREATE TABLE IF NOT EXISTS public.configuracoes (
     chave TEXT PRIMARY KEY,
     valor JSONB NOT NULL,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { db } from "../../services/supabase";
 import { Plus, Search, Edit2, Trash2, X, TrendingUp, TrendingDown, CheckSquare, AlertCircle, RefreshCw, Calendar } from "lucide-react";
 import { format } from "date-fns";
@@ -464,7 +464,7 @@ export default function Financeiro() {
         </div>
         <button 
           onClick={handleOpenNew}
-          className="flex items-center gap-2 bg-[#2D2B7A] hover:bg-[#4A47FF] px-4 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all"
+          className="flex items-center gap-2 bg-[#052659] hover:bg-[#5483B3] px-4 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all"
         >
           <Plus size={16} /> Novo Lançamento Manual
         </button>
@@ -482,7 +482,7 @@ export default function Financeiro() {
           </div>
           <button
             onClick={handleGerarRecorrencias}
-            className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-450 text-[#0d0d0d] font-bold text-xs px-4 py-2 rounded-xl transition-all whitespace-nowrap"
+            className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-450 text-[#021024] font-bold text-xs px-4 py-2 rounded-xl transition-all whitespace-nowrap"
           >
             <RefreshCw size={14} /> Gerar Recorrências do Mês
           </button>
@@ -607,14 +607,14 @@ export default function Financeiro() {
             <input 
               type="text" 
               placeholder="Buscar por descrição ou categoria..."
-              className="w-full bg-white/5 border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+              className="w-full bg-white/5 border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="flex flex-wrap gap-2 w-full md:w-auto">
             <select 
-              className="bg-[#0D0D0D] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none flex-1 md:flex-none"
+              className="bg-[#021024] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none flex-1 md:flex-none"
               value={filterTipo}
               onChange={(e) => setFilterTipo(e.target.value)}
             >
@@ -623,7 +623,7 @@ export default function Financeiro() {
               <option value="Despesa">Apenas Saídas (Despesas)</option>
             </select>
             <select 
-              className="bg-[#0D0D0D] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none flex-1 md:flex-none"
+              className="bg-[#021024] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none flex-1 md:flex-none"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -632,7 +632,7 @@ export default function Financeiro() {
               <option value="Pendente">A Conferir (Pendente)</option>
             </select>
             <select 
-              className="bg-[#0D0D0D] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none flex-1 md:flex-none"
+              className="bg-[#021024] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none flex-1 md:flex-none"
               value={filterPeriodo}
               onChange={(e) => setFilterPeriodo(e.target.value)}
             >
@@ -645,14 +645,14 @@ export default function Financeiro() {
             <div className="flex gap-2 items-center w-full md:w-auto bg-white/2 p-2 rounded-xl border border-white/5">
               <input 
                 type="date"
-                className="bg-[#0D0D0D] border border-white/5 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
+                className="bg-[#021024] border border-white/5 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
                 value={customStart}
                 onChange={(e) => setCustomStart(e.target.value)}
               />
               <span className="text-slate-500 text-xs">até</span>
               <input 
                 type="date"
-                className="bg-[#0D0D0D] border border-white/5 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
+                className="bg-[#021024] border border-white/5 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
                 value={customEnd}
                 onChange={(e) => setCustomEnd(e.target.value)}
               />
@@ -748,7 +748,7 @@ export default function Financeiro() {
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="glass w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-white/5 bg-[#0D0D0D]">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-white/5 bg-[#021024]">
               <h3 className="font-bold text-white text-lg">
                 {editingId ? "Editar Lançamento" : "Novo Lançamento Financeiro"}
               </h3>
@@ -765,7 +765,7 @@ export default function Financeiro() {
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Tipo de Lançamento *</label>
                   <select 
-                    className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none"
+                    className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none"
                     value={tipo}
                     onChange={(e) => setTipo(e.target.value)}
                   >
@@ -776,7 +776,7 @@ export default function Financeiro() {
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Categoria *</label>
                   <select 
-                    className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none"
+                    className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none"
                     value={categoria}
                     onChange={(e) => setCategoria(e.target.value)}
                   >
@@ -836,7 +836,7 @@ export default function Financeiro() {
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Status Lançamento *</label>
                   <select 
-                    className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none"
+                    className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none"
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
                   >
@@ -861,12 +861,12 @@ export default function Financeiro() {
               {status === "Pago" && (
                 <div className="p-4 bg-white/2 rounded-xl border border-white/5 grid grid-cols-2 gap-4 animate-fadeIn">
                   <div className="col-span-2">
-                    <span className="block text-xs font-bold text-[#c2c1ff] uppercase">Conciliação Bancária</span>
+                    <span className="block text-xs font-bold text-[#C1E8FF] uppercase">Conciliação Bancária</span>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-400 mb-1">Banco Destino/Origem</label>
                     <select 
-                      className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none"
+                      className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none"
                       value={banco}
                       onChange={(e) => setBanco(e.target.value)}
                     >
@@ -879,7 +879,7 @@ export default function Financeiro() {
                   <div>
                     <label className="block text-xs font-semibold text-slate-400 mb-1">Meio de Pagamento</label>
                     <select 
-                      className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none"
+                      className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none"
                       value={meioPagamento}
                       onChange={(e) => setMeioPagamento(e.target.value)}
                     >
@@ -900,7 +900,7 @@ export default function Financeiro() {
                     id="recorrenteCheckbox"
                     checked={recorrente} 
                     onChange={(e) => setRecorrente(e.target.checked)}
-                    className="w-4 h-4 rounded border-white/10 bg-[#0d0d0d] text-[#2d2b7a] focus:ring-[#2d2b7a] focus:ring-offset-[#0d0d0d] focus:ring-2"
+                    className="w-4 h-4 rounded border-white/10 bg-[#021024] text-[#052659] focus:ring-[#052659] focus:ring-offset-[#021024] focus:ring-2"
                   />
                   <label htmlFor="recorrenteCheckbox" className="text-sm font-medium text-slate-300 cursor-pointer select-none">
                     Lançamento Recorrente?
@@ -910,7 +910,7 @@ export default function Financeiro() {
                   <div className="animate-fadeIn">
                     <label className="block text-xs font-semibold text-slate-400 mb-1">Frequência da Recorrência</label>
                     <select 
-                      className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none"
+                      className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none"
                       value={frequencia}
                       onChange={(e) => setFrequencia(e.target.value)}
                     >
@@ -941,7 +941,7 @@ export default function Financeiro() {
                 </button>
                 <button 
                   type="submit" 
-                  className="px-6 py-2.5 bg-[#2D2B7A] hover:bg-[#4A47FF] text-white font-bold text-sm rounded-xl shadow-lg transition-all"
+                  className="px-6 py-2.5 bg-[#052659] hover:bg-[#5483B3] text-white font-bold text-sm rounded-xl shadow-lg transition-all"
                 >
                   Salvar Lançamento
                 </button>
@@ -955,7 +955,7 @@ export default function Financeiro() {
       {conciliationModalOpen && conciliatingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="glass w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-white/5 bg-[#0D0D0D]">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-white/5 bg-[#021024]">
               <h3 className="font-bold text-white text-base">Confirmar Recebimento (Conciliação)</h3>
               <button onClick={() => setConciliationModalOpen(false)} className="text-slate-400 hover:text-white">
                 <X size={20} />
@@ -982,7 +982,7 @@ export default function Financeiro() {
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Banco Destino *</label>
                   <select 
-                    className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none"
+                    className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none"
                     value={banco}
                     onChange={(e) => setBanco(e.target.value)}
                   >
@@ -997,7 +997,7 @@ export default function Financeiro() {
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Meio de Pagamento *</label>
                 <select 
-                  className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none"
+                  className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none"
                   value={meioPagamento}
                   onChange={(e) => setMeioPagamento(e.target.value)}
                 >

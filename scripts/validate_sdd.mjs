@@ -19,7 +19,7 @@ function check(name, condition, detail = '') {
 }
 
 console.log('==========================================================');
-console.log('🧪 SPEC-DRIVEN VALIDATION SUITE — SITE-RGTECH (001)');
+console.log('🧪 SPEC-DRIVEN VALIDATION SUITE — SITE-RGTECH (001 & 002)');
 console.log('==========================================================\n');
 
 // 1. FR-001 & FR-002: Code Splitting & Lazy Loading in App.jsx and vite.config.js
@@ -34,7 +34,7 @@ const viteConfig = fs.readFileSync(path.join(rootDir, 'vite.config.js'), 'utf8')
 check(
   'FR-002: manualChunks configurado em vite.config.js',
   viteConfig.includes('manualChunks'),
-  'Separação de pacotes pesados (html2pdf, supabase, lucide)'
+  'Separação de pacotes pesados (html2pdf, supabase, lucide, kanban)'
 );
 
 // 2. FR-003: LandingPage.jsx sem cache-busting Date.now() e sem botão LOGIN no topo
@@ -132,6 +132,63 @@ if (fs.existsSync(distAssetsDir)) {
 } else {
   check('SC-001: Pasta dist/assets existe', false, 'Execute npm run build');
 }
+
+console.log('\n----------------------------------------------------------');
+console.log('🎨 FEATURE 002: PALETA EM DEGRADÊ & KANBAN DE MANUTENÇÃO');
+console.log('----------------------------------------------------------\n');
+
+// 8. Feature 002 - Paleta de cores oficial (#021024, #052659, #5483B3, #7DA0CA, #C1E8FF)
+const indexCss = fs.readFileSync(path.join(rootDir, 'src/index.css'), 'utf8');
+check(
+  'F002-01: Nova paleta em degradê (#021024, #052659, #5483B3, #7DA0CA, #C1E8FF) configurada em src/index.css',
+  indexCss.includes('#021024') &&
+  indexCss.includes('#052659') &&
+  indexCss.includes('#5483B3') &&
+  indexCss.includes('#7DA0CA') &&
+  indexCss.includes('#C1E8FF')
+);
+
+// 9. Feature 002 - Menu lateral trocado para Manutenção
+const layoutJsx = fs.readFileSync(path.join(rootDir, 'src/components/Layout.jsx'), 'utf8');
+check(
+  'F002-02: Menu lateral em Layout.jsx exibe "Manutenção" em vez de "Ordens de OS"',
+  layoutJsx.includes('label: "Manutenção"') && !layoutJsx.includes('label: "Ordens de OS"')
+);
+
+// 10. Feature 002 - Kanban de Manutenção com @dnd-kit, DragOverlay, 6 raias, WhatsApp e PDF
+const osJsx = fs.readFileSync(path.join(rootDir, 'src/pages/admin/OrdemServico.jsx'), 'utf8');
+check(
+  'F002-03: Kanban de Manutenção usa @dnd-kit/core, @dnd-kit/sortable e DragOverlay animado',
+  osJsx.includes('@dnd-kit/core') && osJsx.includes('@dnd-kit/sortable') && osJsx.includes('DragOverlay')
+);
+check(
+  'F002-04: Adição rápida de cartão no topo da raia ("Título do cartão...") presente',
+  osJsx.includes('Título do cartão...')
+);
+check(
+  'F002-05: Cards possuem Prioridade, ícone/link direto para WhatsApp e geração de PDF',
+  osJsx.includes('prioridade') && osJsx.includes('api.whatsapp.com') && osJsx.includes('html2pdf')
+);
+
+// 11. Feature 002 - Gatilho financeiro ao mover para Finalizado e desacoplamento de Orçamento Avulso
+check(
+  'F002-06: supabase.js possui DEFAULT_KANBAN_COLUMNS com as 6 raias e triggerFinanceiroFromOS ao finalizar',
+  supabaseJs.includes('Equipamentos recebidos') &&
+  supabaseJs.includes('Em analise') &&
+  supabaseJs.includes('Orçamento enviado') &&
+  supabaseJs.includes('Aprovado e Execução') &&
+  supabaseJs.includes('Finalizado') &&
+  supabaseJs.includes('Aguardando Peças') &&
+  supabaseJs.includes('triggerFinanceiroFromOS') &&
+  !supabaseJs.includes('await db.ordem_servico.triggerFromOrcamento')
+);
+
+// 12. Feature 002 - Script SQL de migração presente
+const hasMigrationSql = fs.existsSync(path.join(rootDir, 'supabase_migration_kanban_manutencao.sql'));
+check(
+  'F002-07: Script supabase_migration_kanban_manutencao.sql existe na raiz',
+  hasMigrationSql
+);
 
 console.log('\n==========================================================');
 console.log(`📊 RESULTADO: ${passed} aprovados | ${failed} falharam`);

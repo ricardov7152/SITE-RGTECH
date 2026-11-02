@@ -8,6 +8,43 @@ export const supabase = createClient(
   supabaseAnonKey || 'placeholder'
 );
 
+// Colunas padrão do Kanban de Manutenção (Trello-style)
+export const DEFAULT_KANBAN_COLUMNS = [
+  { id: 'recebido', title: 'Equipamentos recebidos', color: '#C1E8FF' },
+  { id: 'em_analise', title: 'Em analise', color: '#7DA0CA' },
+  { id: 'orcamento_enviado', title: 'Orçamento enviado', color: '#5483B3' },
+  { id: 'aprovado_execucao', title: 'Aprovado e Execução', color: '#38bdf8' },
+  { id: 'finalizado', title: 'Finalizado', color: '#34d399' },
+  { id: 'aguardando_peca', title: 'Aguardando Peças', color: '#fbbf24' },
+];
+
+const LEGACY_STATUS_MAP = {
+  recebido: 'recebido',
+  em_analise: 'em_analise',
+  em_diagnostico: 'em_analise',
+  orcamento_enviado: 'orcamento_enviado',
+  aprovado_execucao: 'aprovado_execucao',
+  em_execucao: 'aprovado_execucao',
+  finalizado: 'finalizado',
+  pronto_retirada: 'finalizado',
+  entregue: 'finalizado',
+  aguardando_peca: 'aguardando_peca',
+  cancelado: 'aguardando_peca',
+};
+
+const REVERSE_LEGACY_STATUS = {
+  recebido: 'recebido',
+  em_analise: 'em_diagnostico',
+  orcamento_enviado: 'em_diagnostico',
+  aprovado_execucao: 'em_execucao',
+  finalizado: 'entregue',
+  aguardando_peca: 'aguardando_peca',
+};
+
+export function normalizeKanbanStatus(status) {
+  return LEGACY_STATUS_MAP[status] || 'recebido';
+}
+
 /**
  * Gera o próximo ID sequencial (ex: ORC-2026-1001 ou OS-2026-1001)
  * consultando o maior número já utilizado no ano corrente (max + 1),
@@ -124,7 +161,7 @@ export const db = {
     }
   },
 
-  // ── Orçamentos ──
+  // ── Orçamentos (Avulsos) ──
   orcamentos: {
     list: async () => {
       try {
@@ -166,9 +203,9 @@ export const db = {
         const { error: err2 } = await supabase.from('orcamento_itens').insert(newItens);
         if (err2) throw err2;
 
+        // Orçamentos avulsos aprovados geram apenas lançamento financeiro (não criam card de manutenção automaticamente)
         if (newOrcamento.status === "Aprovado") {
           await db.financeiro.triggerFromOrcamento(newOrcamento);
-          await db.ordem_servico.triggerFromOrcamento(newOrcamento);
         }
 
         return { data: { ...newOrcamento, itens: newItens }, error: null };
@@ -187,7 +224,6 @@ export const db = {
           const { data: orc } = await supabase.from('orcamentos').select('*').eq('id', id).single();
           if (orc) {
             await db.financeiro.triggerFromOrcamento(orc);
-            await db.ordem_servico.triggerFromOrcamento(orc);
           }
         }
         return { error: null };
@@ -273,6 +309,59 @@ export const db = {
         console.error("Erro na automação financeira de orçamento:", err);
         throw err;
       }
+    },
+    triggerFinanceiroFromOS: async (os, itens = [], clienteNome = "") => {
+      return db.financeiro.triggerFromOS(os, itens, clienteNome);
+    },
+    triggerFromOS: async (os, itens = [], clienteNome = "") => {
+      try {
+        const subtotal = (itens || []).reduce(
+          (acc, item) => acc + Number(item.quantidade || 1) * Number(item.valor_unitario || 0),
+          0
+        );
+        const desconto = Number(os.desconto || 0);
+        const valorCalculado = Math.max(0, subtotal - desconto);
+        const valorFinal = valorCalculado > 0 ? valorCalculado : Number(os.valor_total || 0);
+
+        // Verificar duplicidade por os_id (se coluna existir) ou pela descrição com numero_os
+        const { data: existingList } = await supabase
+          .from('financeiro')
+          .select('id, os_id, descricao, orcamento_id')
+          .or(`descricao.ilike.%${os.numero_os}%${os.orcamento_id ? `,orcamento_id.eq.${os.orcamento_id}` : ''}`);
+
+        if (existingList && existingList.length > 0) {
+          return { skipped: true };
+        }
+
+        const tituloCard = os.titulo || `${os.equipamento_tipo || 'Equipamento'} ${os.equipamento_marca || ''}`.trim();
+        const desc = `Manutenção Finalizada ${os.numero_os} - ${tituloCard}${clienteNome ? ` (${clienteNome})` : ''}`;
+        const hoje = new Date().toISOString().split('T')[0];
+
+        const payload = {
+          tipo: 'Receita',
+          categoria: 'Manutenção',
+          descricao: desc,
+          valor: valorFinal,
+          status: 'Pendente',
+          cliente_id: os.cliente_id || null,
+          orcamento_id: os.orcamento_id || null,
+          os_id: os.id,
+          data_vencimento: hoje,
+          observacoes: 'Gerado automaticamente ao finalizar manutenção no quadro Kanban (A Conferir).'
+        };
+
+        const { error } = await supabase.from('financeiro').insert([payload]);
+        if (error) {
+          // Fallback caso a coluna os_id ainda não tenha sido adicionada na tabela financeiro
+          const { os_id, ...fallbackPayload } = payload;
+          const { error: errFallback } = await supabase.from('financeiro').insert([fallbackPayload]);
+          if (errFallback) throw errFallback;
+        }
+        return { skipped: false };
+      } catch (err) {
+        console.error("Erro ao gerar lançamento financeiro automático da Manutenção:", err);
+        return { error: err };
+      }
     }
   },
 
@@ -290,7 +379,7 @@ export const db = {
     }
   },
 
-  // ── Ordem de Serviço ──
+  // ── Ordem de Serviço / Quadro Kanban de Manutenção ──
   ordem_servico: {
     list: async () => {
       try {
@@ -298,7 +387,7 @@ export const db = {
         if (error) throw error;
         return { data, error: null };
       } catch (err) {
-        console.error("Erro ao listar ordens de serviço no Supabase:", err);
+        console.error("Erro ao listar manutenções no Supabase:", err);
         throw err;
       }
     },
@@ -308,41 +397,146 @@ export const db = {
         if (err1) throw err1;
         const { data: itens, error: err2 } = await supabase.from('os_itens').select('*').eq('os_id', id);
         if (err2) throw err2;
-        return { data: { ...os, itens }, error: null };
+        return { data: { ...os, itens: itens || [] }, error: null };
       } catch (err) {
-        console.error("Erro ao carregar ordem de serviço no Supabase:", err);
+        console.error("Erro ao carregar manutenção no Supabase:", err);
         throw err;
       }
     },
-    insert: async (os, itens) => {
+    createCard: async (cardInput) => {
       try {
-        const { data: newOS, error: err1 } = await supabase.from('ordem_servico').insert([os]).select();
+        const year = new Date().getFullYear();
+        const numeroOs = cardInput.numero_os || await getNextSequentialId('ordem_servico', 'numero_os', `OS-${year}-`);
+        const hoje = new Date().toISOString().split('T')[0];
+        const prazoDias = Number(cardInput.prazo_entrega_dias || 5);
+        const previstaDate = new Date();
+        previstaDate.setDate(previstaDate.getDate() + prazoDias);
+        const dataPrevista = cardInput.data_entrega_prevista || previstaDate.toISOString().split('T')[0];
+
+        const fullPayload = {
+          numero_os: numeroOs,
+          titulo: cardInput.titulo || 'Manutenção de Equipamento',
+          prioridade: cardInput.prioridade || 'Média',
+          posicao: Number(cardInput.posicao ?? 0),
+          cliente_id: cardInput.cliente_id || null,
+          status: cardInput.status || 'recebido',
+          data_abertura: cardInput.data_abertura || hoje,
+          prazo_entrega_dias: prazoDias,
+          data_entrega_prevista: dataPrevista,
+          equipamento_tipo: cardInput.equipamento_tipo || cardInput.titulo || 'Computador / Notebook',
+          equipamento_marca: cardInput.equipamento_marca || 'A definir',
+          equipamento_modelo: cardInput.equipamento_modelo || '',
+          equipamento_numero_serie: cardInput.equipamento_numero_serie || '',
+          acessorios_entregues: cardInput.acessorios_entregues || '',
+          problema_relatado: cardInput.problema_relatado || '',
+          tecnico_responsavel: cardInput.tecnico_responsavel || 'Técnico RG TECH',
+          observacoes_internas: cardInput.observacoes_internas || '',
+          desconto: Number(cardInput.desconto || 0),
+          valor_total: Number(cardInput.valor_total || 0),
+          condicoes_pagamento: cardInput.condicoes_pagamento || 'PIX / Cartão / Dinheiro',
+        };
+
+        const { data, error } = await supabase.from('ordem_servico').insert([fullPayload]).select();
+        if (!error && data && data[0]) {
+          return { data: data[0], error: null };
+        }
+
+        // Fallback resiliente caso o script SQL de migração ainda não tenha sido executado no Supabase
+        const legacyPayload = {
+          numero_os: numeroOs,
+          cliente_id: cardInput.cliente_id || null,
+          status: REVERSE_LEGACY_STATUS[fullPayload.status] || 'recebido',
+          data_abertura: fullPayload.data_abertura,
+          prazo_entrega_dias: prazoDias,
+          data_entrega_prevista: dataPrevista,
+          equipamento_tipo: fullPayload.titulo || fullPayload.equipamento_tipo,
+          equipamento_marca: fullPayload.equipamento_marca,
+          equipamento_modelo: fullPayload.equipamento_modelo,
+          equipamento_numero_serie: fullPayload.equipamento_numero_serie,
+          acessorios_entregues: fullPayload.acessorios_entregues,
+          tecnico_responsavel: fullPayload.tecnico_responsavel,
+          observacoes_internas: fullPayload.observacoes_internas || fullPayload.problema_relatado,
+        };
+        const { data: legacyData, error: legacyErr } = await supabase.from('ordem_servico').insert([legacyPayload]).select();
+        if (legacyErr) throw legacyErr;
+        return { data: { ...fullPayload, ...legacyData[0], status: fullPayload.status }, error: null };
+      } catch (err) {
+        console.error("Erro ao criar cartão de manutenção no Supabase:", err);
+        throw err;
+      }
+    },
+    insert: async (os, itens = []) => {
+      try {
+        const { data: created, error: err1 } = await db.ordem_servico.createCard(os);
         if (err1) throw err1;
-        const mappedItens = itens.map(item => ({ ...item, os_id: newOS[0].id }));
-        const { data: newItens, error: err2 } = await supabase.from('os_itens').insert(mappedItens).select();
-        if (err2) throw err2;
-        return { data: { ...newOS[0], itens: newItens }, error: null };
+        let newItens = [];
+        if (itens && itens.length > 0) {
+          const mappedItens = itens.map(item => ({ ...item, os_id: created.id }));
+          const { data: insertedItens, error: err2 } = await supabase.from('os_itens').insert(mappedItens).select();
+          if (err2) throw err2;
+          newItens = insertedItens || [];
+        }
+        return { data: { ...created, itens: newItens }, error: null };
       } catch (err) {
         console.error("Erro ao inserir ordem de serviço no Supabase:", err);
         throw err;
       }
     },
-    update: async (id, os) => {
+    update: async (id, osUpdates) => {
       try {
-        const { error } = await supabase.from('ordem_servico').update(os).eq('id', id);
-        if (error) throw error;
-        return { error: null };
+        const payload = { ...osUpdates, atualizado_em: new Date().toISOString() };
+        const { data, error } = await supabase.from('ordem_servico').update(payload).eq('id', id).select();
+        if (!error) {
+          return { data: data?.[0] || payload, error: null };
+        }
+
+        // Fallback caso colunas novas ainda não existam no banco
+        const {
+          titulo,
+          prioridade,
+          posicao,
+          problema_relatado,
+          desconto,
+          valor_total,
+          condicoes_pagamento,
+          status,
+          ...legacyRest
+        } = payload;
+
+        if (status) {
+          legacyRest.status = REVERSE_LEGACY_STATUS[status] || 'recebido';
+        }
+        const { error: errFallback } = await supabase.from('ordem_servico').update(legacyRest).eq('id', id);
+        if (errFallback) throw errFallback;
+        return { data: payload, error: null };
       } catch (err) {
         console.error("Erro ao atualizar ordem de serviço no Supabase:", err);
         throw err;
       }
     },
-    updateStatus: async (id, status, motivo_cancelamento = null) => {
+    updatePositions: async (orderedCards = []) => {
+      try {
+        await Promise.all(
+          orderedCards.map((card, index) =>
+            supabase
+              .from('ordem_servico')
+              .update({ posicao: index, status: card.status, atualizado_em: new Date().toISOString() })
+              .eq('id', card.id)
+          )
+        );
+        return { error: null };
+      } catch (err) {
+        console.error("Erro ao atualizar posições no Kanban:", err);
+        return { error: err };
+      }
+    },
+    updateStatus: async (id, status, motivo_cancelamento = null, posicao = null) => {
       try {
         const { data: dbOS } = await supabase.from('ordem_servico').select('*').eq('id', id).single();
         const os = dbOS;
-        if (!os) return { error: "OS não encontrada" };
-        const statusAnterior = os.status;
+        if (!os) return { error: "Manutenção não encontrada" };
+        const statusAnterior = normalizeKanbanStatus(os.status);
+        const statusNovoNorm = normalizeKanbanStatus(status);
 
         const { data: dbItens } = await supabase.from('os_itens').select('*').eq('os_id', id);
         const osItens = dbItens || [];
@@ -353,15 +547,29 @@ export const db = {
           motivo_cancelamento: status === "cancelado" ? motivo_cancelamento : os.motivo_cancelamento
         };
 
-        if (status === "entregue") {
+        if (posicao !== null && posicao !== undefined) {
+          updates.posicao = posicao;
+        }
+
+        if (statusNovoNorm === "finalizado" || status === "entregue") {
           updates.data_entrega_real = new Date().toISOString().split('T')[0];
         }
 
         const { error } = await supabase.from('ordem_servico').update(updates).eq('id', id);
-        if (error) throw error;
+        if (error) {
+          // Fallback para status legado se o CHECK constraint ainda não foi migrado no banco
+          const legacyUpdates = {
+            status: REVERSE_LEGACY_STATUS[statusNovoNorm] || 'recebido',
+            atualizado_em: updates.atualizado_em,
+            data_entrega_real: updates.data_entrega_real || os.data_entrega_real,
+          };
+          const { error: legacyErr } = await supabase.from('ordem_servico').update(legacyUpdates).eq('id', id);
+          if (legacyErr) throw legacyErr;
+        }
 
-        const novoStatusBaixa = status === "em_execucao" || status === "entregue";
-        const anteriorStatusBaixa = statusAnterior === "em_execucao" || statusAnterior === "entregue";
+        // Baixa automática de estoque ao entrar em execução ou finalizar
+        const novoStatusBaixa = statusNovoNorm === "aprovado_execucao" || statusNovoNorm === "finalizado";
+        const anteriorStatusBaixa = statusAnterior === "aprovado_execucao" || statusAnterior === "finalizado";
 
         if (novoStatusBaixa && !anteriorStatusBaixa) {
           for (const item of osItens) {
@@ -375,137 +583,72 @@ export const db = {
           }
         }
 
-        if (status === "entregue") {
+        // Ao finalizar: ativa garantias e gera lançamento financeiro "Pendente" (A Conferir)
+        if (statusNovoNorm === "finalizado") {
           const dataInicioStr = new Date().toISOString().split('T')[0];
           
-          const updatedItens = osItens.map(item => {
+          for (const item of osItens) {
             const inicio = new Date();
             const fim = new Date(inicio);
-            fim.setDate(fim.getDate() + (item.garantia_dias || 0));
-            return {
-              ...item,
+            fim.setDate(fim.getDate() + (item.garantia_dias || 30));
+            await supabase.from('os_itens').update({
               data_inicio_garantia: dataInicioStr,
               data_fim_garantia: fim.toISOString().split('T')[0],
               status_garantia: 'ativa'
-            };
-          });
-
-          for (const ui of updatedItens) {
-            await supabase.from('os_itens').update({
-              data_inicio_garantia: ui.data_inicio_garantia,
-              data_fim_garantia: ui.data_fim_garantia,
-              status_garantia: 'ativa'
-            }).eq('id', ui.id);
+            }).eq('id', item.id);
           }
 
-          if (os.orcamento_id) {
-            const { data: finRec } = await supabase.from('financeiro').select('*').eq('orcamento_id', os.orcamento_id).single();
-            if (finRec && finRec.meio_pagamento === "na retirada") {
-              await supabase.from('financeiro').update({ status: "Pago", data_pagamento: dataInicioStr }).eq('id', finRec.id);
-            }
-          }
-
+          let clienteNome = "";
           if (os.cliente_id) {
+            const { data: cli } = await supabase.from('clientes').select('nome_completo').eq('id', os.cliente_id).maybeSingle();
+            clienteNome = cli?.nome_completo || "";
             await supabase.from('clientes').update({ ultimo_contato: dataInicioStr }).eq('id', os.cliente_id);
           }
+
+          await db.financeiro.triggerFromOS({ ...os, status: statusNovoNorm }, osItens, clienteNome);
         }
 
         return { error: null };
       } catch (err) {
-        console.error("Erro ao atualizar status da OS no Supabase:", err);
+        console.error("Erro ao atualizar status da manutenção no Supabase:", err);
         throw err;
       }
     },
-    triggerFromOrcamento: async (orcamento) => {
+    delete: async (id) => {
       try {
-        const { data } = await supabase.from('ordem_servico').select('id').eq('orcamento_id', orcamento.id);
-        const exists = data && data.length > 0;
-        if (exists) return;
-
-        let orcItens = [];
-        const { data: dbItens } = await supabase.from('orcamento_itens').select('*').eq('orcamento_id', orcamento.id);
-        orcItens = dbItens || [];
-
-        const year = new Date().getFullYear();
-        const numeroOs = await getNextSequentialId('ordem_servico', 'numero_os', `OS-${year}-`);
-
-        let prazoDias = 5;
-        if (orcamento.prazo_entrega) {
-          const parsed = parseInt(orcamento.prazo_entrega.replace(/\D/g, ""), 10);
-          if (!isNaN(parsed)) {
-            prazoDias = parsed;
-          }
-        }
-
-        const dataAberturaStr = orcamento.data_emissao || new Date().toISOString().split('T')[0];
-        const dataAbertura = new Date(dataAberturaStr + "T00:00:00");
-        const dataPrevistaDate = new Date(dataAbertura);
-        dataPrevistaDate.setDate(dataPrevistaDate.getDate() + prazoDias);
-        const dataPrevistaStr = dataPrevistaDate.toISOString().split('T')[0];
-
-        const novaOS = {
-          numero_os: numeroOs,
-          orcamento_id: orcamento.id,
-          cliente_id: orcamento.cliente_id,
-          status: 'recebido',
-          data_abertura: dataAberturaStr,
-          prazo_entrega_dias: prazoDias,
-          data_entrega_prevista: dataPrevistaStr,
-          equipamento_tipo: orcamento.eqp_tipo || "Equipamento",
-          equipamento_marca: orcamento.eqp_marca || "Genérica",
-          equipamento_modelo: orcamento.eqp_modelo || "",
-          equipamento_numero_serie: orcamento.eqp_serie || "",
-          acessorios_entregues: "",
-          tecnico_responsavel: "Técnico Padrão",
-          observacoes_internas: "Gerado automaticamente por aprovação de orçamento."
-        };
-
-        const { data: insertedOSData, error: insertOSErr } = await supabase.from('ordem_servico').insert([novaOS]).select();
-        if (insertOSErr) throw insertOSErr;
-        const insertedOS = insertedOSData[0];
-
-        const osItens = orcItens.map(oi => {
-          let garantiaDias = 30;
-          if (oi.garantia) {
-            const valor = parseInt(oi.garantia.replace(/\D/g, ""), 10);
-            if (!isNaN(valor)) {
-              if (oi.garantia.toLowerCase().includes("ano")) {
-                garantiaDias = valor * 365;
-              } else if (oi.garantia.toLowerCase().includes("mês") || oi.garantia.toLowerCase().includes("mes")) {
-                garantiaDias = valor * 30;
-              } else {
-                garantiaDias = valor;
-              }
-            }
-          }
-
-          return {
-            os_id: insertedOS.id,
-            item_catalogo_id: oi.produto_id,
-            tipo: oi.tipo,
-            quantidade: oi.quantidade,
-            valor_unitario: Number(oi.valor_unitario),
-            garantia_dias: garantiaDias,
-            status_garantia: 'ativa'
-          };
-        });
-
-        const { error: insertOSItensErr } = await supabase.from('os_itens').insert(osItens);
-        if (insertOSItensErr) throw insertOSItensErr;
+        const { error } = await supabase.from('ordem_servico').delete().eq('id', id);
+        if (error) throw error;
+        return { error: null };
       } catch (err) {
-        console.error("Erro na automação OS de orçamento:", err);
+        console.error("Erro ao excluir manutenção no Supabase:", err);
         throw err;
       }
     }
   },
 
-  // ── Itens da OS ──
+  // ── Itens da OS / Manutenção ──
   os_itens: {
+    listAll: async () => {
+      try {
+        const { data, error } = await supabase.from('os_itens').select('*');
+        if (error) throw error;
+        return { data: data || [], error: null };
+      } catch (err) {
+        console.error("Erro ao listar itens de OS no Supabase:", err);
+        throw err;
+      }
+    },
     insert: async (item) => {
       try {
         const { data, error } = await supabase.from('os_itens').insert([item]).select();
-        if (error) throw error;
-        return { data: data[0], error: null };
+        if (!error && data && data[0]) {
+          return { data: data[0], error: null };
+        }
+        // Fallback caso nome/descricao ainda não existam em os_itens
+        const { nome, descricao, ...legacyItem } = item;
+        const { data: legacyData, error: legacyErr } = await supabase.from('os_itens').insert([legacyItem]).select();
+        if (legacyErr) throw legacyErr;
+        return { data: { ...legacyData[0], nome, descricao }, error: null };
       } catch (err) {
         console.error("Erro ao inserir item de OS no Supabase:", err);
         throw err;
@@ -522,6 +665,7 @@ export const db = {
       }
     }
   },
+
   // ── Bancos ──
   bancos: {
     list: async () => {
@@ -555,7 +699,8 @@ export const db = {
       }
     }
   },
-  // ── Configurações Gerais ──
+
+  // ── Configurações Gerais (Metas + Colunas do Kanban) ──
   configuracoes: {
     get: async () => {
       try {

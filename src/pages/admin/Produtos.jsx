@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { db } from "../../services/supabase";
 import { Plus, Search, Edit2, Trash2, X, Tag } from "lucide-react";
 
@@ -182,7 +182,7 @@ export default function Produtos() {
         </div>
         <button 
           onClick={handleOpenNew}
-          className="flex items-center gap-2 bg-[#2D2B7A] hover:bg-[#4A47FF] px-4 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all"
+          className="flex items-center gap-2 bg-[#052659] hover:bg-[#5483B3] px-4 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all"
         >
           <Plus size={16} /> Novo Item
         </button>
@@ -197,14 +197,14 @@ export default function Produtos() {
             <input 
               type="text" 
               placeholder="Buscar por nome, categoria, subcategoria ou fornecedor..."
-              className="w-full bg-white/5 border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+              className="w-full bg-white/5 border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="flex gap-2">
             <select 
-              className="bg-[#0D0D0D] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+              className="bg-[#021024] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
               value={filterTipo}
               onChange={(e) => setFilterTipo(e.target.value)}
             >
@@ -213,7 +213,7 @@ export default function Produtos() {
               <option value="Peça">Apenas Peças</option>
             </select>
             <select 
-              className="bg-[#0D0D0D] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+              className="bg-[#021024] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -343,7 +343,7 @@ export default function Produtos() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="glass w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col">
             {/* Modal Header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-white/5 bg-[#0D0D0D]">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-white/5 bg-[#021024]">
               <h3 className="font-bold text-white text-lg">
                 {editingId ? "Editar Item" : "Adicionar Novo Item"}
               </h3>
@@ -363,7 +363,7 @@ export default function Produtos() {
                   type="text" 
                   required 
                   placeholder="Ex: Formatação de Notebook"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
                 />
@@ -374,7 +374,7 @@ export default function Produtos() {
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Tipo *</label>
                   <select 
                     required
-                    className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+                    className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
                     value={tipo}
                     onChange={(e) => {
                       const newTipo = e.target.value;
@@ -390,7 +390,7 @@ export default function Produtos() {
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Status do Item *</label>
                   <select 
                     required
-                    className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+                    className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
                     value={statusItem}
                     onChange={(e) => setStatusItem(e.target.value)}
                   >
@@ -408,7 +408,7 @@ export default function Produtos() {
                     step="0.01"
                     required 
                     placeholder="0.00"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                     value={preco}
                     onChange={(e) => setPreco(e.target.value)}
                   />
@@ -419,7 +419,7 @@ export default function Produtos() {
                     type="number" 
                     step="0.01"
                     placeholder="0.00"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                     value={precoCusto}
                     onChange={(e) => setPrecoCusto(e.target.value)}
                   />
@@ -446,7 +446,7 @@ export default function Produtos() {
                       type="number" 
                       required 
                       placeholder="0"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                       value={estoqueAtual}
                       onChange={(e) => setEstoqueAtual(e.target.value)}
                     />
@@ -456,7 +456,7 @@ export default function Produtos() {
                     <input 
                       type="text" 
                       placeholder="Ex: Kingston Oficial, Kabum"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                       value={fornecedor}
                       onChange={(e) => setFornecedor(e.target.value)}
                     />
@@ -470,7 +470,7 @@ export default function Produtos() {
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Categoria *</label>
                   <select 
                     required
-                    className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+                    className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
                     value={categoria}
                     onChange={(e) => setCategoria(e.target.value)}
                   >
@@ -487,7 +487,7 @@ export default function Produtos() {
                     type="text" 
                     placeholder="Ex: SSD SATA, RAM DDR4, Gamer"
                     list="subcategories-suggestions"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                     value={subcategoria}
                     onChange={(e) => setSubcategoria(e.target.value)}
                   />
@@ -517,7 +517,7 @@ export default function Produtos() {
                     <label className="block text-[10px] text-slate-500 font-bold uppercase mb-1">Unidade</label>
                     <select 
                       required
-                      className="w-full bg-[#0D0D0D] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
+                      className="w-full bg-[#021024] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
                       value={garantiaUnidade}
                       onChange={(e) => setGarantiaUnidade(e.target.value)}
                     >
@@ -534,7 +534,7 @@ export default function Produtos() {
                 <textarea 
                   rows="2" 
                   placeholder="Detalhes adicionais do produto ou serviço..."
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all resize-vertical"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all resize-vertical"
                   value={descricao}
                   onChange={(e) => setDescricao(e.target.value)}
                 />
@@ -551,7 +551,7 @@ export default function Produtos() {
                 </button>
                 <button 
                   type="submit" 
-                  className="px-6 py-2.5 bg-[#2D2B7A] hover:bg-[#4A47FF] text-white font-bold text-sm rounded-xl shadow-lg transition-all"
+                  className="px-6 py-2.5 bg-[#052659] hover:bg-[#5483B3] text-white font-bold text-sm rounded-xl shadow-lg transition-all"
                 >
                   {editingId ? "Salvar Alterações" : "Adicionar Item"}
                 </button>

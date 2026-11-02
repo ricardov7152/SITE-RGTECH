@@ -21,6 +21,14 @@ export default defineConfig({
             if (id.includes('date-fns')) {
               return 'vendor-date'
             }
+            if (
+              id.includes('@dnd-kit') ||
+              id.includes('framer-motion') ||
+              id.includes('canvas-confetti') ||
+              id.includes('react-parallax-tilt')
+            ) {
+              return 'vendor-kanban'
+            }
           }
         },
       },

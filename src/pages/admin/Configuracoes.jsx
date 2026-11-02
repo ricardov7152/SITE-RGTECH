@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Settings, Target, Bell, Calendar, Plus, Trash2, CheckCircle2 } from "lucide-react";
 import { db } from "../../services/supabase";
 
@@ -246,7 +246,7 @@ export default function Configuracoes() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-            <Settings size={28} className="text-[#4A47FF]" /> Configurações Gerais
+            <Settings size={28} className="text-[#5483B3]" /> Configurações Gerais
           </h1>
           <p className="text-slate-400 text-sm mt-1">Gerenciamento de metas comerciais e regras operacionais do ERP</p>
         </div>
@@ -273,7 +273,7 @@ export default function Configuracoes() {
               <label className="block text-xs font-semibold text-slate-400 mb-1">Selecione o Mês</label>
               <input 
                 type="month"
-                className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+                className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 required
@@ -284,7 +284,7 @@ export default function Configuracoes() {
               <input 
                 type="number"
                 placeholder="Ex: 5000"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
                 value={metaValue}
                 onChange={(e) => setMetaValue(e.target.value)}
                 required
@@ -293,7 +293,7 @@ export default function Configuracoes() {
             </div>
             <button 
               type="submit"
-              className="flex items-center justify-center gap-2 bg-[#2D2B7A] hover:bg-[#4A47FF] px-4 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all"
+              className="flex items-center justify-center gap-2 bg-[#052659] hover:bg-[#5483B3] px-4 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all"
             >
               <Plus size={16} /> Definir Meta
             </button>
@@ -351,7 +351,7 @@ export default function Configuracoes() {
               <div className="flex items-center gap-3">
                 <input 
                   type="number"
-                  className="w-24 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+                  className="w-24 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
                   value={configs.dias_alerta_followup}
                   onChange={(e) => handleUpdateFollowup(e.target.value)}
                   min="1"
@@ -371,7 +371,7 @@ export default function Configuracoes() {
       {/* Gestão de Taxonomia do Catálogo */}
       <div className="glass p-6 rounded-2xl shadow-xl space-y-6">
         <div className="flex items-center gap-2.5 border-b border-white/5 pb-4">
-          <Settings className="text-[#4A47FF]" size={20} />
+          <Settings className="text-[#5483B3]" size={20} />
           <h3 className="font-bold text-white text-base">Categorias & Subcategorias do Catálogo</h3>
         </div>
 
@@ -390,7 +390,7 @@ export default function Configuracoes() {
               <button 
                 type="button"
                 onClick={() => handleAddCat("Peça", novaCatPeca)}
-                className="bg-[#2D2B7A] hover:bg-[#4A47FF] px-3 py-2 rounded-xl text-xs font-bold text-white transition-all whitespace-nowrap"
+                className="bg-[#052659] hover:bg-[#5483B3] px-3 py-2 rounded-xl text-xs font-bold text-white transition-all whitespace-nowrap"
               >
                 Adicionar
               </button>
@@ -425,7 +425,7 @@ export default function Configuracoes() {
               <button 
                 type="button"
                 onClick={() => handleAddCat("Serviço", novaCatServico)}
-                className="bg-[#2D2B7A] hover:bg-[#4A47FF] px-3 py-2 rounded-xl text-xs font-bold text-white transition-all whitespace-nowrap"
+                className="bg-[#052659] hover:bg-[#5483B3] px-3 py-2 rounded-xl text-xs font-bold text-white transition-all whitespace-nowrap"
               >
                 Adicionar
               </button>
@@ -460,7 +460,7 @@ export default function Configuracoes() {
               <button 
                 type="button"
                 onClick={handleAddSubcat}
-                className="bg-[#2D2B7A] hover:bg-[#4A47FF] px-3 py-2 rounded-xl text-xs font-bold text-white transition-all whitespace-nowrap"
+                className="bg-[#052659] hover:bg-[#5483B3] px-3 py-2 rounded-xl text-xs font-bold text-white transition-all whitespace-nowrap"
               >
                 Adicionar
               </button>
@@ -485,7 +485,7 @@ export default function Configuracoes() {
         {/* Gestão de Contas Bancárias */}
         <div className="glass p-6 rounded-2xl shadow-xl space-y-6">
           <div className="flex items-center gap-2.5 border-b border-white/5 pb-4">
-            <Settings className="text-[#4A47FF]" size={20} />
+            <Settings className="text-[#5483B3]" size={20} />
             <h3 className="font-bold text-white text-base">Contas Bancárias / Bancos de Destino</h3>
           </div>
 
@@ -502,7 +502,7 @@ export default function Configuracoes() {
               <button 
                 type="button"
                 onClick={handleAddBanco}
-                className="bg-[#2D2B7A] hover:bg-[#4A47FF] px-3 py-2 rounded-xl text-xs font-bold text-white transition-all whitespace-nowrap"
+                className="bg-[#052659] hover:bg-[#5483B3] px-3 py-2 rounded-xl text-xs font-bold text-white transition-all whitespace-nowrap"
               >
                 Adicionar Banco
               </button>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+﻿import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../../services/supabase";
 import { Save, Printer, ArrowLeft, Plus, Trash2, HelpCircle } from "lucide-react";
@@ -286,7 +286,7 @@ export default function CriarOrcamento() {
           </button>
           <button 
             onClick={handleSave}
-            className="flex items-center gap-2 bg-[#2D2B7A] hover:bg-[#4A47FF] px-5 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all"
+            className="flex items-center gap-2 bg-[#052659] hover:bg-[#5483B3] px-5 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all"
           >
             <Save size={16} /> Salvar Orçamento
           </button>
@@ -305,7 +305,7 @@ export default function CriarOrcamento() {
               <input
                 type="text"
                 placeholder="Digite o nome ou CPF/CNPJ para buscar..."
-                className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+                className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
                 value={clientSearch}
                 onFocus={() => setIsClientDropdownOpen(true)}
                 onChange={(e) => {
@@ -317,7 +317,7 @@ export default function CriarOrcamento() {
                 }}
               />
               {isClientDropdownOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-[#121212] border border-white/10 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-[#021024] border border-white/10 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
                   {filteredClientes.length === 0 ? (
                     <div className="p-3 text-xs text-slate-500 text-center">Nenhum cliente encontrado</div>
                   ) : (
@@ -325,7 +325,7 @@ export default function CriarOrcamento() {
                       <button
                         key={c.id}
                         type="button"
-                        className="w-full text-left px-4 py-3 text-xs hover:bg-[#2D2B7A] hover:text-white border-b border-white/5 last:border-0 text-slate-300 transition-all flex justify-between items-center"
+                        className="w-full text-left px-4 py-3 text-xs hover:bg-[#052659] hover:text-white border-b border-white/5 last:border-0 text-slate-300 transition-all flex justify-between items-center"
                         onClick={() => {
                           setClienteId(c.id);
                           setClientSearch(c.nome_completo);
@@ -368,7 +368,7 @@ export default function CriarOrcamento() {
                   type="text" 
                   placeholder="Notebook"
                   list="tipos-equipamento"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                   value={equipamento.tipo}
                   onChange={(e) => setEquipamento({ ...equipamento, tipo: e.target.value })}
                 />
@@ -384,7 +384,7 @@ export default function CriarOrcamento() {
                   type="text" 
                   placeholder="Dell"
                   list="marcas-equipamento"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                   value={equipamento.marca}
                   onChange={(e) => setEquipamento({ ...equipamento, marca: e.target.value })}
                 />
@@ -399,7 +399,7 @@ export default function CriarOrcamento() {
                 <input 
                   type="text" 
                   placeholder="Vostro 3510"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                   value={equipamento.modelo}
                   onChange={(e) => setEquipamento({ ...equipamento, modelo: e.target.value })}
                 />
@@ -409,7 +409,7 @@ export default function CriarOrcamento() {
                 <input 
                   type="text" 
                   placeholder="S/N"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
                   value={equipamento.serie}
                   onChange={(e) => setEquipamento({ ...equipamento, serie: e.target.value })}
                 />
@@ -425,7 +425,7 @@ export default function CriarOrcamento() {
               <textarea 
                 rows="4" 
                 placeholder="Ex: Notebook apresenta tela azul intermitente e superaquecimento..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all resize-vertical"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all resize-vertical"
                 value={problema}
                 onChange={(e) => setProblema(e.target.value)}
               />
@@ -443,7 +443,7 @@ export default function CriarOrcamento() {
               <div className="flex gap-2">
                 {/* Dropdown Rápido de Produtos de Catálogo */}
                 <select 
-                  className="bg-[#0D0D0D] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none"
+                  className="bg-[#021024] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none"
                   onChange={(e) => {
                     const prod = produtosCatalogo.find(p => p.id === e.target.value);
                     if (prod) adicionarItem(prod);
@@ -494,7 +494,7 @@ export default function CriarOrcamento() {
                       <div>
                         <label className="text-[10px] text-slate-500 font-bold uppercase">Tipo</label>
                         <select 
-                          className="w-full bg-[#0d0d0d] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white"
+                          className="w-full bg-[#021024] border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white"
                           value={item.tipo}
                           onChange={(e) => atualizarItem(item.id, "tipo", e.target.value)}
                         >
@@ -553,7 +553,7 @@ export default function CriarOrcamento() {
               </div>
               <div className="flex justify-between text-base font-bold text-white border-t border-white/5 pt-2">
                 <span>Total Final:</span>
-                <span className="text-[#c2c1ff]">R$ {totalFinal.toFixed(2)}</span>
+                <span className="text-[#C1E8FF]">R$ {totalFinal.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -567,7 +567,7 @@ export default function CriarOrcamento() {
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Status do Orçamento *</label>
                 <select 
-                  className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF]"
+                  className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#5483B3]"
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                 >
@@ -581,7 +581,7 @@ export default function CriarOrcamento() {
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Data de Emissão *</label>
                 <input 
                   type="date"
-                  className="w-full bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+                  className="w-full bg-[#021024] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
                   value={dataEmissao}
                   onChange={(e) => setDataEmissao(e.target.value)}
                 />
@@ -649,10 +649,10 @@ export default function CriarOrcamento() {
         <div ref={pdfRef} style={{ padding: "30px 40px", fontFamily: "Arial, sans-serif", fontSize: "11.5px", lineHeight: "1.6", color: "#333" }}>
           
           {/* Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #0029F5", paddingBottom: "12px", marginBottom: "20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #052659", paddingBottom: "12px", marginBottom: "20px" }}>
             <img src="/logo_dark.png" alt="RG TECH" style={{ maxHeight: "75px", maxWidth: "220px", objectFit: "contain" }} />
             <div style={{ textAlign: "right", fontSize: "11px" }}>
-              <h2 style={{ margin: 0, color: "#0029F5", fontSize: "16px", fontWeight: "bold" }}>RG TECH Computadores</h2>
+              <h2 style={{ margin: 0, color: "#052659", fontSize: "16px", fontWeight: "bold" }}>RG TECH Computadores</h2>
               <p style={{ margin: "3px 0 0 0", color: "#555" }}>⚡ Soluções Inteligentes em TI</p>
               <p style={{ margin: "2px 0 0 0" }}><strong>WhatsApp:</strong> (66) 9 9929-8666</p>
               <p style={{ margin: "1px 0 0 0" }}><strong>E-mail:</strong> rgtechpc@gmail.com</p>
@@ -661,7 +661,7 @@ export default function CriarOrcamento() {
 
           {/* Título */}
           <div style={{ textAlign: "center", marginBottom: "20px" }}>
-            <h1 style={{ margin: 0, fontSize: "18px", color: "#0029F5", textTransform: "uppercase", letterSpacing: "1px" }}>Orçamento de Serviços</h1>
+            <h1 style={{ margin: 0, fontSize: "18px", color: "#052659", textTransform: "uppercase", letterSpacing: "1px" }}>Orçamento de Serviços</h1>
             <p style={{ margin: "4px 0 0 0", color: "#666", fontSize: "12px" }}>
               <strong>Nº Proposta:</strong> #{orcamentoNumero} | <strong>Emissão:</strong> {formatDataExibicao(dataEmissao)}
             </p>
@@ -670,7 +670,7 @@ export default function CriarOrcamento() {
           {/* Dados do Cliente e Equipamento */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginBottom: "20px" }}>
             <div style={{ backgroundColor: "#f8fafc", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-              <h3 style={{ margin: "0 0 6px 0", fontSize: "12px", color: "#0029F5", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px", fontWeight: "bold" }}>Dados do Cliente</h3>
+              <h3 style={{ margin: "0 0 6px 0", fontSize: "12px", color: "#052659", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px", fontWeight: "bold" }}>Dados do Cliente</h3>
               <p style={{ margin: "0 0 4px 0" }}><strong>Nome/Razão Social:</strong> {selectedClient?.nome_completo || "Não cadastrado"}</p>
               {selectedClient?.tipo_pessoa === "PJ" ? (
                 <>
@@ -696,7 +696,7 @@ export default function CriarOrcamento() {
               </p>
             </div>
             <div style={{ backgroundColor: "#f8fafc", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-              <h3 style={{ margin: "0 0 6px 0", fontSize: "12px", color: "#0029F5", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px", fontWeight: "bold" }}>Equipamento / Diagnóstico</h3>
+              <h3 style={{ margin: "0 0 6px 0", fontSize: "12px", color: "#052659", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px", fontWeight: "bold" }}>Equipamento / Diagnóstico</h3>
               <p style={{ margin: "0 0 4px 0" }}><strong>Tipo:</strong> {equipamento.tipo || "N/A"}</p>
               <p style={{ margin: "0 0 4px 0" }}><strong>Marca/Modelo:</strong> {equipamento.marca} {equipamento.modelo}</p>
               <p style={{ margin: "0 0 4px 0" }}><strong>Nº de Série:</strong> {equipamento.serie || "N/A"}</p>
@@ -705,10 +705,10 @@ export default function CriarOrcamento() {
           </div>
 
           {/* Tabela de Itens */}
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "12px", color: "#0029F5", fontWeight: "bold" }}>Peças & Serviços</h3>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "12px", color: "#052659", fontWeight: "bold" }}>Peças & Serviços</h3>
           <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "20px", fontSize: "11px" }}>
             <thead>
-              <tr style={{ backgroundColor: "#0029F5", color: "#fff" }}>
+              <tr style={{ backgroundColor: "#052659", color: "#fff" }}>
                 <th style={{ padding: "8px 12px", textAlign: "left", border: "1px solid #e2e8f0" }}>Descrição da Peça ou Serviço</th>
                 <th style={{ padding: "8px 12px", textAlign: "center", width: "50px", border: "1px solid #e2e8f0" }}>Qtd</th>
                 <th style={{ padding: "8px 12px", textAlign: "right", width: "100px", border: "1px solid #e2e8f0" }}>Valor Unit.</th>
@@ -741,7 +741,7 @@ export default function CriarOrcamento() {
                   <td style={{ padding: "5px 8px", textAlign: "right", fontWeight: "bold", color: "#10b981" }}>Desconto:</td>
                   <td style={{ padding: "5px 8px", textAlign: "right", color: "#10b981", fontWeight: "bold" }}>- R$ {Number(desconto).toFixed(2)}</td>
                 </tr>
-                <tr style={{ backgroundColor: "#0029F5", color: "#fff" }}>
+                <tr style={{ backgroundColor: "#052659", color: "#fff" }}>
                   <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: "bold", fontSize: "12px" }}>Valor Total Final:</td>
                   <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: "bold", fontSize: "12px" }}>R$ {totalFinal.toFixed(2)}</td>
                 </tr>
@@ -750,8 +750,8 @@ export default function CriarOrcamento() {
           </div>
 
           {/* Condições e rodapé */}
-          <div style={{ borderTop: "2px solid #0029F5", paddingTop: "12px", fontSize: "11px" }}>
-            <h4 style={{ margin: "0 0 6px 0", color: "#0029F5", fontWeight: "bold" }}>Condições Gerais do Orçamento</h4>
+          <div style={{ borderTop: "2px solid #052659", paddingTop: "12px", fontSize: "11px" }}>
+            <h4 style={{ margin: "0 0 6px 0", color: "#052659", fontWeight: "bold" }}>Condições Gerais do Orçamento</h4>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 15px", marginBottom: "12px" }}>
               <p style={{ margin: 0 }}>- <strong>Validade deste documento:</strong> {condicoes.validade_dias} dias úteis.</p>
               <p style={{ margin: 0 }}>- <strong>Forma de pagamento aceita:</strong> {condicoes.forma_pagamento}</p>
@@ -759,7 +759,7 @@ export default function CriarOrcamento() {
               {condicoes.observacoes && <p style={{ margin: 0, gridColumn: "span 2" }}>- <strong>Observações:</strong> {condicoes.observacoes}</p>}
             </div>
             
-            <h4 style={{ margin: "10px 0 6px 0", color: "#0029F5", fontWeight: "bold" }}>Garantia e Termos</h4>
+            <h4 style={{ margin: "10px 0 6px 0", color: "#052659", fontWeight: "bold" }}>Garantia e Termos</h4>
             <p style={{ margin: 0, fontSize: "9px", color: "#666", textAlign: "justify" }}>
               Serviços prestados contam com garantia legal de 90 dias a partir da data de entrega da máquina (artigo 26 do CDC). 
               Peças de reposição possuem termos de garantia estipulados diretamente pelo fabricante correspondente.

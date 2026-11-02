@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { db } from "../../services/supabase";
 import { 
@@ -168,7 +168,7 @@ export default function Orcamentos() {
         </div>
         <button 
           onClick={() => navigate("/admin/orcamentos/novo")}
-          className="flex items-center gap-2 bg-[#2D2B7A] hover:bg-[#4A47FF] px-4 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all"
+          className="flex items-center gap-2 bg-[#052659] hover:bg-[#5483B3] px-4 py-2.5 rounded-xl font-bold text-sm text-white shadow-lg transition-all"
         >
           <Plus size={16} /> Novo Orçamento
         </button>
@@ -183,13 +183,13 @@ export default function Orcamentos() {
             <input 
               type="text" 
               placeholder="Buscar por número do orçamento ou nome do cliente..."
-              className="w-full bg-white/5 border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4A47FF] transition-all"
+              className="w-full bg-white/5 border border-white/5 rounded-xl py-3 pl-12 pr-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#5483B3] transition-all"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <select 
-            className="bg-[#0D0D0D] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#4A47FF] transition-all"
+            className="bg-[#021024] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#5483B3] transition-all"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
           >

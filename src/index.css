@@ -21,7 +21,8 @@ section[id] {
 @layer base {
   body { 
     font-family: 'Inter', sans-serif; 
-    background-color: #0D0D0D; 
+    background: linear-gradient(145deg, #021024 0%, #052659 60%, #021024 100%);
+    background-color: #021024; 
     color: #e2e2e2; 
   }
   .material-symbols-outlined {
@@ -31,25 +32,62 @@ section[id] {
 
 @layer utilities {
   .glass { 
-    background: rgba(255, 255, 255, 0.03); 
-    backdrop-filter: blur(12px); 
-    border: 1px solid rgba(255, 255, 255, 0.1); 
+    background: linear-gradient(145deg, rgba(5, 38, 89, 0.55) 0%, rgba(2, 16, 36, 0.78) 100%); 
+    backdrop-filter: blur(14px); 
+    border: 1px solid rgba(125, 160, 202, 0.22); 
   }
   .hero-gradient { 
-    background: radial-gradient(circle at 70% 30%, rgba(0, 41, 245, 0.15) 0%, #05050c 60%); 
+    background:
+      radial-gradient(circle at 75% 25%, rgba(84, 131, 179, 0.28) 0%, rgba(5, 38, 89, 0.45) 45%, #021024 85%),
+      linear-gradient(160deg, #021024 0%, #052659 55%, #021024 100%);
+  }
+  .rg-section-gradient {
+    background: linear-gradient(180deg, #021024 0%, #052659 50%, #021024 100%);
+  }
+  .rg-card-gradient {
+    background: linear-gradient(145deg, rgba(5, 38, 89, 0.65) 0%, rgba(2, 16, 36, 0.88) 100%);
+    border: 1px solid rgba(125, 160, 202, 0.22);
+  }
+  .rg-btn-gradient {
+    background: linear-gradient(135deg, #052659 0%, #5483B3 60%, #7DA0CA 100%);
+    color: #ffffff;
+  }
+  .rg-btn-gradient:hover {
+    background: linear-gradient(135deg, #5483B3 0%, #7DA0CA 50%, #C1E8FF 100%);
+    color: #021024;
   }
   .blue-glow { 
-    box-shadow: 0 0 25px rgba(0, 41, 245, 0.3); 
+    box-shadow: 0 0 28px rgba(84, 131, 179, 0.35); 
   }
   .cyan-glow { 
-    box-shadow: 0 0 25px rgba(25, 221, 255, 0.3); 
+    box-shadow: 0 0 28px rgba(193, 232, 255, 0.35); 
+  }
+  .kanban-scrollbar::-webkit-scrollbar {
+    height: 8px;
+    width: 6px;
+  }
+  .kanban-scrollbar::-webkit-scrollbar-track {
+    background: rgba(2, 16, 36, 0.6);
+    border-radius: 9999px;
+  }
+  .kanban-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, #052659, #5483B3);
+    border-radius: 9999px;
+  }
+  .kanban-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(90deg, #5483B3, #7DA0CA);
   }
 }
 
 @theme {
-  --color-primary: #19DDFF;
-  --color-primary-container: #0029F5;
-  --color-secondary-container: #001CB8;
-  --color-outline: #918f9c;
+  --color-rg-deep: #021024;
+  --color-rg-navy: #052659;
+  --color-rg-steel: #5483B3;
+  --color-rg-sky: #7DA0CA;
+  --color-rg-ice: #C1E8FF;
+  --color-primary: #C1E8FF;
+  --color-primary-container: #5483B3;
+  --color-secondary-container: #052659;
+  --color-outline: #7DA0CA;
   --font-family-inter: 'Inter', sans-serif;
 }
