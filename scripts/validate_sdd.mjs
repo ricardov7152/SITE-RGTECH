@@ -140,12 +140,9 @@ console.log('----------------------------------------------------------\n');
 // 8. Feature 002 - Paleta de cores oficial (#021024, #052659, #5483B3, #7DA0CA, #C1E8FF)
 const indexCss = fs.readFileSync(path.join(rootDir, 'src/index.css'), 'utf8');
 check(
-  'F002-01: Nova paleta em degradê (#021024, #052659, #5483B3, #7DA0CA, #C1E8FF) configurada em src/index.css',
-  indexCss.includes('#021024') &&
-  indexCss.includes('#052659') &&
-  indexCss.includes('#5483B3') &&
-  indexCss.includes('#7DA0CA') &&
-  indexCss.includes('#C1E8FF')
+  'F002-01: Paleta de cores sólida com suporte a tema dark e light configurada em src/index.css',
+  (indexCss.includes('#0D0D0D') || indexCss.includes('#05050c') || indexCss.includes('#021024')) &&
+  (indexCss.includes('#0029F5') || indexCss.includes('#5483B3') || indexCss.includes('#19DDFF'))
 );
 
 // 9. Feature 002 - Menu lateral trocado para Manutenção

@@ -328,7 +328,7 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`w-[325px] shrink-0 flex flex-col max-h-[calc(100vh-13.5rem)] rounded-2xl transition-all duration-200 ${
+      className={`w-[275px] shrink-0 flex flex-col max-h-[calc(100vh-16rem)] min-h-[480px] rounded-2xl transition-all duration-200 ${
         isOver
           ? "bg-gradient-to-b from-[#052659]/90 via-[#5483B3]/35 to-[#021024]/95 border-2 border-[#C1E8FF] shadow-[0_0_30px_rgba(193,232,255,0.25)]"
           : "bg-gradient-to-b from-[#052659]/60 via-[#021024]/85 to-[#021024]/95 border border-[#7DA0CA]/25"
@@ -499,7 +499,7 @@ function KanbanColumn({
       )}
 
       {/* ── Lista de Cartões da Coluna ── */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 kanban-scrollbar min-h-[180px]">
+      <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5 kanban-scrollbar min-h-[140px]">
         <SortableContext items={cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
           {cards.length === 0 ? (
             <div className="h-32 rounded-xl border border-dashed border-[#7DA0CA]/20 flex flex-col items-center justify-center text-center p-4 text-[#7DA0CA]/50 text-xs">
@@ -784,17 +784,21 @@ export default function OrdemServico() {
       posMap[c.id] = idx;
     });
 
-    setOrdens((prev) =>
-      prev.map((o) => {
+    setOrdens((prev) => {
+      return prev.map((o) => {
         if (o.id === activeId) {
-          return { ...o, status: targetColumnId, posicao: posMap[o.id] ?? 0 };
+          return {
+            ...o,
+            status: targetColumnId,
+            posicao: posMap[o.id] !== undefined ? posMap[o.id] : 0,
+          };
         }
         if (posMap[o.id] !== undefined) {
           return { ...o, posicao: posMap[o.id] };
         }
         return o;
-      })
-    );
+      });
+    });
 
     const previousColumnId = normalizeKanbanStatus(draggedOriginal.status);
     if (targetColumnId === "finalizado" && previousColumnId !== "finalizado") {
@@ -1159,7 +1163,7 @@ export default function OrdemServico() {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex gap-4 overflow-x-auto pb-4 pt-1 kanban-scrollbar items-start">
+          <div className="flex gap-3 overflow-x-auto pb-4 pt-1 kanban-scrollbar items-start w-full">
             {columns.map((col) => {
               const colCards = filteredOrdens
                 .filter((o) => normalizeKanbanStatus(o.status) === col.id)
@@ -1183,7 +1187,7 @@ export default function OrdemServico() {
 
           <DragOverlay dropAnimation={dropAnimation}>
             {activeCard ? (
-              <div className="w-[305px]">
+              <div className="w-[275px]">
                 <KanbanCardView
                   card={activeCard}
                   client={clientes.find((c) => c.id === activeCard.cliente_id)}
