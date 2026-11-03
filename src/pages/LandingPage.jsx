@@ -221,7 +221,7 @@ export default function LandingPage() {
       {/* ── Prova Social Section ── */}
       <section className="py-24 bg-[#070714] text-white relative overflow-hidden">
         <div className="container mx-auto px-4 md:px-8 max-w-7xl relative z-10">
-          <h2 className="text-2xl md:text-3xl font-extrabold mb-12 text-center tracking-tight">A Assistência Preferida de Sorriso - MT</h2>
+          <h2 className="text-2xl md:text-3xl font-extrabold mb-12 text-center tracking-tight">Assistência Preferida de Sorriso - MT</h2>
           
           {/* Contadores */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
