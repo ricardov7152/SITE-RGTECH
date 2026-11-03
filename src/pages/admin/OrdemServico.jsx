@@ -105,14 +105,14 @@ function KanbanCardView({
       onClick={onClick}
       className={`group relative rounded-2xl p-4 transition-all duration-200 select-none cursor-pointer ${
         isOverlay
-          ? "bg-gradient-to-br from-[#052659] via-[#052659] to-[#021024] border-2 border-[#C1E8FF] shadow-[0_24px_50px_rgba(2,16,36,0.9),0_0_25px_rgba(193,232,255,0.45)] scale-105 rotate-2 z-50"
-          : "bg-gradient-to-br from-[#052659]/85 via-[#021024]/90 to-[#021024] border border-[#7DA0CA]/25 hover:border-[#C1E8FF]/60 hover:shadow-[0_10px_28px_rgba(5,38,89,0.65)] hover:-translate-y-0.5"
+          ? "bg-gradient-to-br from-[#052659] via-[#052659] to-[#021024] border-2 border-[#C1E8FF] shadow-[0_24px_50px_rgba(2,16,36,0.9),0_0_25px_rgba(193,232,255,0.45)] scale-105 rotate-2 z-50 kanban-card-box"
+          : "bg-gradient-to-br from-[#052659]/85 via-[#021024]/90 to-[#021024] border border-[#7DA0CA]/25 hover:border-[#C1E8FF]/60 hover:shadow-[0_10px_28px_rgba(5,38,89,0.65)] hover:-translate-y-0.5 kanban-card-box"
       }`}
     >
       {/* Topo do Card: Número OS + Prioridade + Handle */}
       <div className="flex items-center justify-between gap-2 mb-2.5">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#021024]/90 text-[#C1E8FF] border border-[#5483B3]/40">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#021024]/90 text-[#C1E8FF] border border-[#5483B3]/40 kanban-card-badge-os">
             {card.numero_os}
           </span>
           <span
@@ -135,12 +135,12 @@ function KanbanCardView({
       </div>
 
       {/* Título principal do Cartão */}
-      <h4 className="text-sm font-bold text-white leading-snug mb-1 group-hover:text-[#C1E8FF] transition-colors line-clamp-2">
+      <h4 className="text-sm font-bold text-white leading-snug mb-1 group-hover:text-[#C1E8FF] transition-colors line-clamp-2 kanban-card-title">
         {tituloPrincipal}
       </h4>
 
       {/* Subtítulo Equipamento */}
-      <p className="text-[11px] text-[#7DA0CA] flex items-center gap-1.5 mb-2.5 truncate">
+      <p className="text-[11px] text-[#7DA0CA] flex items-center gap-1.5 mb-2.5 truncate kanban-card-subtitle">
         <Laptop size={12} className="shrink-0 text-[#5483B3]" />
         <span className="truncate">{subtituloEqp}</span>
       </p>
@@ -155,10 +155,10 @@ function KanbanCardView({
       {/* Cliente + Botão WhatsApp direto */}
       <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-[#7DA0CA]/15">
         <div className="flex items-center gap-1.5 min-w-0">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#052659] to-[#5483B3] border border-[#C1E8FF]/30 flex items-center justify-center text-[10px] font-bold text-[#C1E8FF] shrink-0">
+          <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#052659] to-[#5483B3] border border-[#C1E8FF]/30 flex items-center justify-center text-[10px] font-bold text-[#C1E8FF] shrink-0 kanban-card-client-avatar">
             {client?.nome_completo ? client.nome_completo[0].toUpperCase() : <User size={11} />}
           </div>
-          <span className="text-xs font-semibold text-[#C1E8FF]/90 truncate">
+          <span className="text-xs font-semibold text-[#C1E8FF]/90 truncate kanban-card-client-name">
             {client ? client.nome_completo : "Sem cliente vinculado"}
           </span>
         </div>
@@ -196,7 +196,7 @@ function KanbanCardView({
         </span>
 
         {totalValue > 0 ? (
-          <span className="font-extrabold text-[#C1E8FF] bg-[#052659]/80 border border-[#7DA0CA]/30 px-2 py-0.5 rounded-md">
+          <span className="font-extrabold text-[#C1E8FF] bg-[#052659]/80 border border-[#7DA0CA]/30 px-2 py-0.5 rounded-md kanban-card-price">
             R$ {Number(totalValue).toFixed(2)}
           </span>
         ) : (
@@ -332,10 +332,10 @@ function KanbanColumn({
         isOver
           ? "bg-gradient-to-b from-[#052659]/90 via-[#5483B3]/35 to-[#021024]/95 border-2 border-[#C1E8FF] shadow-[0_0_30px_rgba(193,232,255,0.25)]"
           : "bg-gradient-to-b from-[#052659]/60 via-[#021024]/85 to-[#021024]/95 border border-[#7DA0CA]/25"
-      } backdrop-blur-xl`}
+      } backdrop-blur-xl kanban-col-container`}
     >
       {/* ── Cabeçalho da Coluna ── */}
-      <div className="p-3.5 border-b border-[#7DA0CA]/20 flex items-center justify-between gap-2">
+      <div className="p-3.5 border-b border-[#7DA0CA]/20 flex items-center justify-between gap-2 kanban-col-header">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <span
             className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
@@ -395,7 +395,7 @@ function KanbanColumn({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className="px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-[#021024]/90 text-[#C1E8FF] border border-[#7DA0CA]/30">
+          <span className="px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-[#021024]/90 text-[#C1E8FF] border border-[#7DA0CA]/30 kanban-count-pill">
             {cards.length}
           </span>
           <button
@@ -491,7 +491,7 @@ function KanbanColumn({
           <button
             type="button"
             onClick={() => setIsAddingCard(true)}
-            className="w-full py-1.5 px-3 rounded-xl border border-dashed border-[#7DA0CA]/30 hover:border-[#C1E8FF]/60 bg-[#021024]/40 hover:bg-[#052659]/50 text-[#7DA0CA] hover:text-[#C1E8FF] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all"
+            className="w-full py-1.5 px-3 rounded-xl border border-dashed border-[#7DA0CA]/30 hover:border-[#C1E8FF]/60 bg-[#021024]/40 hover:bg-[#052659]/50 text-[#7DA0CA] hover:text-[#C1E8FF] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all kanban-quick-add-btn"
           >
             <Plus size={14} /> Adicionar cartão
           </button>
@@ -502,7 +502,7 @@ function KanbanColumn({
       <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5 kanban-scrollbar min-h-[140px]">
         <SortableContext items={cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
           {cards.length === 0 ? (
-            <div className="h-32 rounded-xl border border-dashed border-[#7DA0CA]/20 flex flex-col items-center justify-center text-center p-4 text-[#7DA0CA]/50 text-xs">
+            <div className="h-32 rounded-xl border border-dashed border-[#7DA0CA]/20 flex flex-col items-center justify-center text-center p-4 text-[#7DA0CA]/50 text-xs kanban-empty-dropzone">
               <span>Arraste um cartão para cá ou clique em &ldquo;+ Adicionar cartão&rdquo;</span>
             </div>
           ) : (

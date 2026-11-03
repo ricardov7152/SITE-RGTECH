@@ -155,6 +155,90 @@ section[id] {
   color: #0f172a !important;
 }
 
+/* ── Suporte completo do Kanban ao Modo Claro (Light) ── */
+.light .kanban-col-container {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.08) !important;
+}
+
+.light .kanban-col-header {
+  border-color: #e2e8f0 !important;
+  background: #f8fafc !important;
+}
+
+.light .kanban-col-header h3 {
+  color: #0f172a !important;
+}
+
+.light .kanban-card-box {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 2px 8px -1px rgba(15, 23, 42, 0.08) !important;
+}
+
+.light .kanban-card-box:hover {
+  border-color: #93c5fd !important;
+  box-shadow: 0 8px 20px -2px rgba(0, 41, 245, 0.12) !important;
+}
+
+.light .kanban-card-title {
+  color: #0f172a !important;
+}
+
+.light .kanban-card-subtitle {
+  color: #475569 !important;
+}
+
+.light .kanban-card-badge-os {
+  background: #f1f5f9 !important;
+  color: #0029F5 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.light .kanban-card-client-avatar {
+  background: #e2e8f0 !important;
+  color: #0029F5 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.light .kanban-card-client-name {
+  color: #1e293b !important;
+}
+
+.light .kanban-card-price {
+  background: #eff6ff !important;
+  color: #0029F5 !important;
+  border-color: #bfdbfe !important;
+}
+
+.light .kanban-card-date {
+  color: #64748b !important;
+}
+
+.light .kanban-empty-dropzone {
+  border-color: #cbd5e1 !important;
+  color: #94a3b8 !important;
+  background: #f8fafc !important;
+}
+
+.light .kanban-quick-add-btn {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+.light .kanban-quick-add-btn:hover {
+  background: #eff6ff !important;
+  border-color: #93c5fd !important;
+  color: #0029F5 !important;
+}
+
+.light .kanban-count-pill {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
 /* Hover de linhas e itens */
 .light .hover\:bg-white\/5:hover,
 .light .hover\:bg-white\/10:hover {
