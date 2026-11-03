@@ -32,7 +32,7 @@ export default function LandingPage() {
 
           {/* Links - Desktop */}
           <div className="hidden md:flex gap-8 items-center justify-center">
-            {["servicos:SERVIÇOS", "marcas:MARCAS", "sobre:SOBRE NÓS", "faq:FAQ"].map((item) => {
+            {["servicos:HARDWARE", "ia-tech:SOLUÇÕES & IA", "marcas:MARCAS", "sobre:SOBRE NÓS", "faq:FAQ"].map((item) => {
               const [id, label] = item.split(":");
               return (
                 <a 
@@ -64,7 +64,7 @@ export default function LandingPage() {
         {/* Mobile Menu Dropdown */}
         {isMenuOpen && (
           <div className="md:hidden absolute top-full left-0 w-full bg-[#05050c]/95 backdrop-blur-2xl border-b border-white/5 py-6 px-6 flex flex-col gap-4 shadow-2xl animate-fadeIn">
-            {["servicos:SERVIÇOS", "marcas:MARCAS", "sobre:SOBRE NÓS", "faq:FAQ"].map((item) => {
+            {["servicos:HARDWARE", "ia-tech:SOLUÇÕES & IA", "marcas:MARCAS", "sobre:SOBRE NÓS", "faq:FAQ"].map((item) => {
               const [id, label] = item.split(":");
               return (
                 <a 
@@ -180,6 +180,72 @@ export default function LandingPage() {
                 <p className="text-slate-400 text-xs leading-relaxed mb-6 flex-1">{s.desc}</p>
                 <span className="text-[#19DDFF] font-bold text-xs flex items-center gap-2 group-hover:gap-4 transition-all mt-auto">
                   Solicitar <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
+      {/* ── Soluções Tecnológicas & IA Section ── */}
+      <section className="py-24 bg-[#050512] relative overflow-hidden border-t border-white/5" id="ia-tech">
+        {/* Background Grid Pattern & Efeitos */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{ backgroundImage: "radial-gradient(#19DDFF 1px, transparent 1px)", backgroundSize: "28px 28px" }}>
+        </div>
+        <div className="absolute w-[450px] h-[450px] bg-[#0029F5]/10 blur-[140px] rounded-full top-1/2 -left-40 pointer-events-none"></div>
+        <div className="absolute w-[350px] h-[350px] bg-[#19DDFF]/10 blur-[130px] rounded-full bottom-0 right-0 pointer-events-none"></div>
+
+        <div className="container mx-auto px-4 md:px-8 max-w-7xl relative z-10">
+          <div className="flex flex-col md:flex-row justify-between md:items-end mb-16 gap-6">
+            <div>
+              <span className="text-[10px] font-bold text-[#19DDFF] mb-3 block tracking-widest uppercase flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#19DDFF] animate-pulse"></span>
+                TRANSFORMAÇÃO DIGITAL & INOVAÇÃO
+              </span>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Soluções Tecnológicas & IA</h2>
+            </div>
+            <p className="text-slate-400 max-w-md text-sm leading-relaxed">Desenvolvimento moderno de software, automações inteligentes e implantação de inteligência artificial para escalar o seu negócio.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {[
+              { 
+                icon: "smart_toy", 
+                title: "Agentes de IA", 
+                desc: "Agentes inteligentes para atendimento 24/7, triagem, pós-venda e operações conectadas ao seu WhatsApp ou CRM." 
+              },
+              { 
+                icon: "language", 
+                title: "Criação de Sites", 
+                desc: "Landing pages de alta conversão, portais institucionais e sistemas web modernos, ultra-rápidos e otimizados para o Google." 
+              },
+              { 
+                icon: "account_tree", 
+                title: "Automações de Processos", 
+                desc: "Integração entre sistemas, relatórios automáticos e eliminação de tarefas manuais repetitivas com RPA e webhooks." 
+              },
+              { 
+                icon: "psychology", 
+                title: "Implantação de IA", 
+                desc: "Consultoria prática e implementação de ferramentas de IA generativa para multiplicar a produtividade da sua equipe." 
+              },
+              { 
+                icon: "hub", 
+                title: "Consultoria em TI", 
+                desc: "Diagnóstico tecnológico, arquitetura de sistemas e soluções sob medida para modernizar toda a operação da sua empresa." 
+              },
+            ].map((s, i) => (
+              <a key={i} href={WA_SERVICO(s.title)} target="_blank" rel="noreferrer"
+                className="glass p-6 rounded-2xl hover:border-[#19DDFF]/40 hover:bg-[#0029F5]/10 hover:shadow-[0_12px_35px_rgba(25,221,255,0.12)] transition-all duration-300 group flex flex-col relative overflow-hidden">
+                <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center mb-6 text-[#19DDFF] group-hover:bg-[#0029F5] group-hover:text-white group-hover:border-[#19DDFF]/40 transition-all duration-300 shrink-0 shadow-lg">
+                  <span className="material-symbols-outlined text-2xl">{s.icon}</span>
+                </div>
+                <h3 className="text-base font-bold text-white mb-3 group-hover:text-[#19DDFF] transition-colors">{s.title}</h3>
+                <p className="text-slate-400 text-xs leading-relaxed mb-6 flex-1">{s.desc}</p>
+                <span className="text-[#19DDFF] font-bold text-xs flex items-center gap-2 group-hover:gap-4 transition-all mt-auto">
+                  Consultar <span className="material-symbols-outlined text-sm">arrow_forward</span>
                 </span>
               </a>
             ))}
