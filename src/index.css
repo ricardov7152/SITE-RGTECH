@@ -64,6 +64,103 @@ section[id] {
   color: #94a3b8 !important;
 }
 
+/* ── Correções Globais de Texto para o Modo Branco ── */
+.light h1,
+.light h2,
+.light h3,
+.light h4,
+.light h5,
+.light h6 {
+  color: #0f172a !important;
+}
+
+.light .text-white {
+  color: #0f172a !important;
+}
+
+.light .text-slate-100,
+.light .text-slate-200,
+.light .text-slate-300 {
+  color: #1e293b !important;
+}
+
+.light .text-slate-400 {
+  color: #475569 !important;
+}
+
+.light .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Contrastes para cores azuis de destaque */
+.light .text-\[\#C1E8FF\] {
+  color: #0029F5 !important;
+}
+.light .text-\[\#7DA0CA\] {
+  color: #475569 !important;
+}
+
+/* Inputs, selects e textareas no modo claro */
+.light input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+.light select,
+.light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.light input::placeholder,
+.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Tabelas no modo claro */
+.light table {
+  color: #1e293b !important;
+}
+.light th {
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+}
+.light td {
+  color: #0f172a !important;
+  border-color: #f1f5f9 !important;
+}
+.light tr:hover {
+  background-color: rgba(241, 245, 249, 0.75) !important;
+}
+
+/* Fundos escuros invertidos para superfícies claras com bordas suaves */
+.light .bg-\[\#0D0D0D\],
+.light .bg-\[\#070707\],
+.light .bg-\[\#05050c\],
+.light .bg-\[\#021024\],
+.light .bg-\[\#052659\] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Bordas brancas suaves que ficariam invisíveis no modo claro */
+.light .border-white\/5,
+.light .border-white\/10,
+.light .border-white\/15,
+.light .border-white\/20 {
+  border-color: #e2e8f0 !important;
+}
+
+.light .bg-white\/5,
+.light .bg-white\/10 {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Hover de linhas e itens */
+.light .hover\:bg-white\/5:hover,
+.light .hover\:bg-white\/10:hover {
+  background-color: #f1f5f9 !important;
+}
+
 @layer utilities {
   .glass { 
     background: rgba(255, 255, 255, 0.03); 
