@@ -239,6 +239,34 @@ section[id] {
   border-color: #cbd5e1 !important;
 }
 
+/* ── Modal do cartão de Manutenção no modo claro ── */
+.light .kanban-modal {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 25px 60px -10px rgba(15, 23, 42, 0.25) !important;
+}
+.light .kanban-modal [class*="bg-[#021024]"],
+.light .kanban-modal [class*="bg-[#052659]"] {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+.light .kanban-modal [class*="border-[#7DA0CA]"] {
+  border-color: #e2e8f0 !important;
+}
+
+/* Texto branco sobre fundos azuis continua branco no modo claro */
+.light .bg-\[\#0029F5\].text-white,
+.light button[class*="from-[#052659]"],
+.light button[class*="from-[#5483B3]"] {
+  color: #ffffff !important;
+}
+
+/* Ciano da marca fica ilegível no branco: usar o azul forte */
+.light .text-\[\#19DDFF\] {
+  color: #0029F5 !important;
+}
+
 /* Hover de linhas e itens */
 .light .hover\:bg-white\/5:hover,
 .light .hover\:bg-white\/10:hover {

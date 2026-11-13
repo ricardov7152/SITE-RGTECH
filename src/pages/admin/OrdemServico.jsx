@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { localDateISO } from "../../utils/date";
 import { db, DEFAULT_KANBAN_COLUMNS, normalizeKanbanStatus } from "../../services/supabase";
 import {
   DndContext,
@@ -86,7 +87,7 @@ function KanbanCardView({
   onWhatsApp,
   dragHandleProps = {},
 }) {
-  const hoje = new Date().toISOString().split("T")[0];
+  const hoje = localDateISO();
   const normStatus = normalizeKanbanStatus(card.status);
   const atrasada =
     card.data_entrega_prevista &&
@@ -537,7 +538,13 @@ export default function OrdemServico() {
   const [erpConfig, setErpConfig] = useState({});
   const [search, setSearch] = useState("");
   const [filterPriority, setFilterPriority] = useState("Todas");
-  const [filterAtrasadas, setFilterAtrasadas] = useState(false);
+  const [filterAtrasadas, setFilterAtrasadas] = useState(() => {
+    try {
+      return new URLSearchParams(window.location.search).get("atrasadas") === "1";
+    } catch {
+      return false;
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [audioMuted, setAudioMuted] = useState(() => isKanbanAudioMuted());
 
@@ -860,7 +867,7 @@ export default function OrdemServico() {
       setCardPrioridade(fullOS.prioridade || "Média");
       setCardClienteId(fullOS.cliente_id || "");
       setStatusOS(normalizeKanbanStatus(fullOS.status));
-      setDataPrevista(fullOS.data_entrega_prevista || new Date().toISOString().split("T")[0]);
+      setDataPrevista(fullOS.data_entrega_prevista || localDateISO());
       setEqpTipo(fullOS.equipamento_tipo || "");
       setEqpMarca(fullOS.equipamento_marca || "");
       setEqpModelo(fullOS.equipamento_modelo || "");
@@ -1045,7 +1052,7 @@ export default function OrdemServico() {
     const matchesPriority =
       filterPriority === "Todas" || (os.prioridade || "Média") === filterPriority;
 
-    const hoje = new Date().toISOString().split("T")[0];
+    const hoje = localDateISO();
     const normStatus = normalizeKanbanStatus(os.status);
     const isAtrasada =
       os.data_entrega_prevista &&
@@ -1212,7 +1219,7 @@ export default function OrdemServico() {
             onClick={() => setModalOpen(false)}
           />
 
-          <div className="w-full max-w-4xl max-h-[92vh] rounded-3xl bg-gradient-to-b from-[#052659] via-[#021024] to-[#021024] border border-[#7DA0CA]/35 shadow-[0_25px_70px_rgba(2,16,36,0.95)] flex flex-col overflow-hidden">
+          <div className="kanban-modal w-full max-w-4xl max-h-[92vh] rounded-3xl bg-gradient-to-b from-[#052659] via-[#021024] to-[#021024] border border-[#7DA0CA]/35 shadow-[0_25px_70px_rgba(2,16,36,0.95)] flex flex-col overflow-hidden">
             {/* Cabeçalho do Modal */}
             <div className="p-6 border-b border-[#7DA0CA]/20 flex flex-wrap items-center justify-between gap-4 bg-[#021024]/60">
               <div className="flex items-center gap-3 min-w-0 flex-1">

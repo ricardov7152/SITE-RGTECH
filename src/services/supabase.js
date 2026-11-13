@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { localDateISO } from "../utils/date";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -29,7 +30,7 @@ const LEGACY_STATUS_MAP = {
   pronto_retirada: 'finalizado',
   entregue: 'finalizado',
   aguardando_peca: 'aguardando_peca',
-  cancelado: 'aguardando_peca',
+  cancelado: 'cancelado',
 };
 
 const REVERSE_LEGACY_STATUS = {
@@ -42,6 +43,7 @@ const REVERSE_LEGACY_STATUS = {
 };
 
 export function normalizeKanbanStatus(status) {
+  if (status === 'cancelado') return 'cancelado';
   return LEGACY_STATUS_MAP[status] || 'recebido';
 }
 
@@ -300,7 +302,7 @@ export const db = {
           status: 'Pendente',
           cliente_id: orcamento.cliente_id,
           orcamento_id: orcamento.id,
-          data_vencimento: orcamento.data_emissao || new Date().toISOString().split('T')[0],
+          data_vencimento: orcamento.data_emissao || localDateISO(),
           observacoes: 'Lançamento automático gerado pela aprovação do orçamento.'
         };
 
@@ -335,7 +337,7 @@ export const db = {
 
         const tituloCard = os.titulo || `${os.equipamento_tipo || 'Equipamento'} ${os.equipamento_marca || ''}`.trim();
         const desc = `Manutenção Finalizada ${os.numero_os} - ${tituloCard}${clienteNome ? ` (${clienteNome})` : ''}`;
-        const hoje = new Date().toISOString().split('T')[0];
+        const hoje = localDateISO();
 
         const payload = {
           tipo: 'Receita',
@@ -407,11 +409,11 @@ export const db = {
       try {
         const year = new Date().getFullYear();
         const numeroOs = cardInput.numero_os || await getNextSequentialId('ordem_servico', 'numero_os', `OS-${year}-`);
-        const hoje = new Date().toISOString().split('T')[0];
+        const hoje = localDateISO();
         const prazoDias = Number(cardInput.prazo_entrega_dias || 5);
         const previstaDate = new Date();
         previstaDate.setDate(previstaDate.getDate() + prazoDias);
-        const dataPrevista = cardInput.data_entrega_prevista || previstaDate.toISOString().split('T')[0];
+        const dataPrevista = cardInput.data_entrega_prevista || localDateISO(previstaDate);
 
         const fullPayload = {
           numero_os: numeroOs,
@@ -552,7 +554,7 @@ export const db = {
         }
 
         if (statusNovoNorm === "finalizado" || status === "entregue") {
-          updates.data_entrega_real = new Date().toISOString().split('T')[0];
+          updates.data_entrega_real = localDateISO();
         }
 
         const { error } = await supabase.from('ordem_servico').update(updates).eq('id', id);
@@ -585,7 +587,7 @@ export const db = {
 
         // Ao finalizar: ativa garantias e gera lançamento financeiro "Pendente" (A Conferir)
         if (statusNovoNorm === "finalizado") {
-          const dataInicioStr = new Date().toISOString().split('T')[0];
+          const dataInicioStr = localDateISO();
           
           for (const item of osItens) {
             const inicio = new Date();
@@ -593,7 +595,7 @@ export const db = {
             fim.setDate(fim.getDate() + (item.garantia_dias || 30));
             await supabase.from('os_itens').update({
               data_inicio_garantia: dataInicioStr,
-              data_fim_garantia: fim.toISOString().split('T')[0],
+              data_fim_garantia: localDateISO(fim),
               status_garantia: 'ativa'
             }).eq('id', item.id);
           }

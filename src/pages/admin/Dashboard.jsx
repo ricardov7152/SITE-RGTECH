@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { db } from "../../services/supabase";
+import { db, normalizeKanbanStatus } from "../../services/supabase";
+import { localDateISO } from "../../utils/date";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -31,6 +32,7 @@ export default function Dashboard() {
   const [clientes, setClientes] = useState([]);
   const [itensDeOrcamento, setItensDeOrcamento] = useState([]);
   const [ordens, setOrdens] = useState([]);
+  const [osItens, setOsItens] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Seletor de Período
@@ -99,6 +101,14 @@ export default function Dashboard() {
         const { data: cliData } = await db.clientes.list();
         const { data: itemsData } = await db.orcamento_itens.list();
         const { data: ordensData } = await db.ordem_servico.list();
+        let osItensData = [];
+        try {
+          const res = await db.os_itens.listAll();
+          osItensData = res?.data || [];
+        } catch (e) {
+          console.error("Erro ao carregar itens das manutenções:", e);
+        }
+        setOsItens(osItensData);
         
         setFinanceiro(finData || []);
         setOrcamentos(orcData || []);
@@ -199,8 +209,10 @@ export default function Dashboard() {
     .reduce((acc, curr) => acc + Number(curr.valor), 0);
 
   // --- TICKET MÉDIO NO PERÍODO ---
-  const totalVendasPagas = financeiro.filter(f => f.tipo === "Receita" && f.status === "Pago" && (f.data_pagamento || f.data_vencimento)?.startsWith(selectedPeriod)).length;
-  const ticketMedio = totalVendasPagas > 0 ? receitasRecebidas / totalVendasPagas : 0;
+  // Agrupa parcelas do mesmo atendimento (OS ou orçamento) para não distorcer a média
+  const receitasPagasPeriodo = financeiro.filter(f => f.tipo === "Receita" && f.status === "Pago" && (f.data_pagamento || f.data_vencimento)?.startsWith(selectedPeriod));
+  const atendimentosPagos = new Set(receitasPagasPeriodo.map(f => f.os_id || f.orcamento_id || f.id)).size;
+  const ticketMedio = atendimentosPagos > 0 ? receitasRecebidas / atendimentosPagos : 0;
 
   // --- PROGRESSO DA META NO PERÍODO ---
   const percentMeta = Math.min(100, Math.round((receitasRecebidas / metaFaturamento) * 100));
@@ -246,21 +258,36 @@ export default function Dashboard() {
   });
 
   // --- VENDAS DE PRODUTOS E SERVIÇOS NO PERÍODO ---
+  // Considera orçamentos avulsos aprovados + manutenções (Kanban) finalizadas no período.
+  // Orçamentos que viraram OS são contados apenas pela OS, para não duplicar.
   let totalVendasProdutos = 0;
   let totalVendasServicos = 0;
-  
+  const serviceCount = {};
+  const orcamentosComOS = new Set(ordens.map(o => o.orcamento_id).filter(Boolean));
+
+  const registrarItem = (nome, tipo, valor, quantidade) => {
+    if (tipo === "Peça") totalVendasProdutos += valor;
+    else totalVendasServicos += valor;
+    if (nome) serviceCount[nome] = (serviceCount[nome] || 0) + Number(quantidade || 1);
+  };
+
   itensDeOrcamento.forEach(item => {
     const parentOrc = orcamentos.find(o => o.id === item.orcamento_id);
-    if (parentOrc && parentOrc.data_emissao?.startsWith(selectedPeriod) && (parentOrc.status === "Aprovado" || parentOrc.status === "Concluído")) {
-      const valor = Number(item.total || 0);
-      const isPeca = item.tipo === "Peça";
-
-      if (isPeca) {
-        totalVendasProdutos += valor;
-      } else {
-        totalVendasServicos += valor;
-      }
+    if (!parentOrc || orcamentosComOS.has(parentOrc.id)) return;
+    if (parentOrc.data_emissao?.startsWith(selectedPeriod) && (parentOrc.status === "Aprovado" || parentOrc.status === "Concluído")) {
+      registrarItem(item.nome, item.tipo, Number(item.total || 0), item.quantidade);
     }
+  });
+
+  const ordensFinalizadasPeriodo = ordens.filter(os =>
+    normalizeKanbanStatus(os.status) === "finalizado" &&
+    (os.data_entrega_real || os.atualizado_em || "").startsWith(selectedPeriod)
+  );
+  const idsFinalizadas = new Set(ordensFinalizadasPeriodo.map(os => os.id));
+  osItens.forEach(item => {
+    if (!idsFinalizadas.has(item.os_id)) return;
+    const valor = Number(item.valor_unitario || 0) * Number(item.quantidade || 1);
+    registrarItem(item.nome, item.tipo, valor, item.quantidade);
   });
 
   // --- GRÁFICO DE RECEITAS POR MÊS (ANUAL) ---
@@ -330,14 +357,6 @@ export default function Dashboard() {
     .slice(0, 5);
 
   // --- SERVIÇOS MAIS REQUISITADOS NO PERÍODO ---
-  const serviceCount = {};
-  itensDeOrcamento.forEach(item => {
-    const parentOrc = orcamentos.find(o => o.id === item.orcamento_id);
-    if (parentOrc && parentOrc.data_emissao?.startsWith(selectedPeriod)) {
-      serviceCount[item.nome] = (serviceCount[item.nome] || 0) + item.quantidade;
-    }
-  });
-
   const popularServices = Object.entries(serviceCount)
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)
@@ -362,32 +381,31 @@ export default function Dashboard() {
   })).sort((a, b) => b.count - a.count);
 
   // --- CÁLCULOS DAS ORDENS DE SERVIÇO NO PERÍODO ---
-  let osRecebido = 0;
-  let osEmDiagnostico = 0;
-  let osAguardandoPeca = 0;
-  let osEmExecucao = 0;
-  let osProntoRetirada = 0;
-  let osAtrasadas = 0;
-
-  const hojeStr = new Date().toISOString().split("T")[0];
-  const ordensDoPeriodo = ordens.filter(os => os.data_abertura?.startsWith(selectedPeriod));
-
-  ordensDoPeriodo.forEach(os => {
-    const status = os.status;
-    if (status !== "entregue" && status !== "cancelado") {
-      if (status === "recebido") osRecebido++;
-      else if (status === "em_diagnostico") osEmDiagnostico++;
-      else if (status === "aguardando_peca") osAguardandoPeca++;
-      else if (status === "em_execucao") osEmExecucao++;
-      else if (status === "pronto_retirada") osProntoRetirada++;
-
-      if (os.data_entrega_prevista && os.data_entrega_prevista < hojeStr) {
-        osAtrasadas++;
-      }
-    }
+  // Situação ATUAL da bancada (não depende do mês selecionado) usando os status do Kanban
+  const hojeStr = localDateISO();
+  const osAbertas = ordens.filter(os => {
+    const s = normalizeKanbanStatus(os.status);
+    return s !== "finalizado" && s !== "cancelado";
   });
+  const contarStatus = (st) => osAbertas.filter(os => normalizeKanbanStatus(os.status) === st).length;
 
-  const totalOSAndamento = osRecebido + osEmDiagnostico + osAguardandoPeca + osEmExecucao + osProntoRetirada;
+  const osRecebido = contarStatus("recebido");
+  const osEmAnalise = contarStatus("em_analise");
+  const osOrcamentoEnviado = contarStatus("orcamento_enviado");
+  const osAguardandoPeca = contarStatus("aguardando_peca");
+  const osEmExecucao = contarStatus("aprovado_execucao");
+  const osAtrasadas = osAbertas.filter(os => os.data_entrega_prevista && os.data_entrega_prevista < hojeStr).length;
+  const totalOSAndamento = osAbertas.length;
+  const osFinalizadasMes = ordensFinalizadasPeriodo.length;
+
+  const osTiles = [
+    { label: "Recebidos", value: osRecebido, color: "text-sky-400" },
+    { label: "Em análise", value: osEmAnalise, color: "text-cyan-400" },
+    { label: "Orç. enviado", value: osOrcamentoEnviado, color: "text-indigo-400" },
+    { label: "Aguard. peça", value: osAguardandoPeca, color: "text-amber-500" },
+    { label: "Execução", value: osEmExecucao, color: "text-[#19DDFF]" },
+    { label: "Finalizadas no mês", value: osFinalizadasMes, color: "text-emerald-400" },
+  ];
 
   const handleWhatsAppAlert = (orc) => {
     const client = clientes.find(c => c.id === orc.cliente_id);
@@ -415,7 +433,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-2">
           <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Período:</label>
           <select
-            className="bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-[#4A47FF] transition-all cursor-pointer shadow-lg"
+            className="bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-[#19DDFF] transition-all cursor-pointer shadow-lg"
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
           >
@@ -471,7 +489,7 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-            <div className="w-10 h-10 bg-[#2D2B7A]/20 text-[#c2c1ff] rounded-xl flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 bg-[#0029F5]/20 text-[#19DDFF] rounded-xl flex items-center justify-center shrink-0">
               <Target size={20} />
             </div>
           </div>
@@ -483,12 +501,12 @@ export default function Dashboard() {
             </div>
             <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden border border-white/5">
               <div 
-                className="bg-gradient-to-r from-[#2D2B7A] to-[#4A47FF] h-full rounded-full transition-all duration-500" 
+                className="bg-gradient-to-r from-[#0029F5] to-[#19DDFF] h-full rounded-full transition-all duration-500" 
                 style={{ width: `${percentMeta}%` }}
               />
             </div>
           </div>
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-[#2D2B7A]"></div>
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-[#0029F5]"></div>
         </div>
 
         {/* Ticket Médio */}
@@ -496,7 +514,7 @@ export default function Dashboard() {
           <div className="space-y-1">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Ticket Médio</span>
             <span className="text-2xl font-bold text-sky-400 block">R$ {ticketMedio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
-            <span className="text-xs text-slate-500 block">Média por faturamento</span>
+            <span className="text-xs text-slate-500 block">Média por atendimento pago</span>
           </div>
           <div className="w-12 h-12 bg-sky-500/10 text-sky-400 rounded-xl flex items-center justify-center shrink-0">
             <AlertCircle size={24} />
@@ -518,7 +536,7 @@ export default function Dashboard() {
             ) : (
               <>
                 <span className="text-lg font-bold text-slate-300 block py-1">Sem comparativo</span>
-                <span className="text-xs text-slate-500 block">Primeiro mês de operação</span>
+                <span className="text-xs text-slate-500 block">Mês anterior sem faturamento</span>
               </>
             )}
           </div>
@@ -539,38 +557,34 @@ export default function Dashboard() {
         <div className="glass p-6 rounded-2xl shadow-xl lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between border-b border-white/5 pb-3">
             <div className="flex items-center gap-2.5">
-              <Wrench className="text-[#4A47FF]" size={20} />
+              <Wrench className="text-[#19DDFF]" size={20} />
               <h3 className="font-bold text-white text-base">OS em Andamento ({totalOSAndamento})</h3>
             </div>
-            <span className="text-slate-500 text-xs font-medium">Status de execução atual</span>
+            <span className="text-slate-500 text-xs font-medium">Situação atual da bancada</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            <div className="bg-white/2 p-3.5 rounded-xl border border-white/5 text-center space-y-1">
-              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Recebido</span>
-              <span className="text-xl font-bold text-blue-400 block">{osRecebido}</span>
-            </div>
-            <div className="bg-white/2 p-3.5 rounded-xl border border-white/5 text-center space-y-1">
-              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Diagnóstico</span>
-              <span className="text-xl font-bold text-sky-400 block">{osEmDiagnostico}</span>
-            </div>
-            <div className="bg-white/2 p-3.5 rounded-xl border border-white/5 text-center space-y-1">
-              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Falta Peça</span>
-              <span className="text-xl font-bold text-amber-500 block">{osAguardandoPeca}</span>
-            </div>
-            <div className="bg-white/2 p-3.5 rounded-xl border border-white/5 text-center space-y-1">
-              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Execução</span>
-              <span className="text-xl font-bold text-[#4A47FF] block">{osEmExecucao}</span>
-            </div>
-            <div className="bg-white/2 p-3.5 rounded-xl border border-white/5 text-center space-y-1">
-              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Retirada</span>
-              <span className="text-xl font-bold text-emerald-400 block">{osProntoRetirada}</span>
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+            {osTiles.map((t) => (
+              <button
+                key={t.label}
+                type="button"
+                onClick={() => navigate("/admin/ordens-servico")}
+                className="bg-white/2 p-3.5 rounded-xl border border-white/5 text-center space-y-1 hover:bg-white/5 hover:border-[#19DDFF]/30 transition-all"
+                title="Abrir quadro de Manutenção"
+              >
+                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">{t.label}</span>
+                <span className={`text-xl font-bold block ${t.color}`}>{t.value}</span>
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Card: OS Atrasadas */}
-        <div className="glass p-6 rounded-2xl shadow-xl flex items-center justify-between relative overflow-hidden">
+        <div
+          onClick={() => navigate("/admin/ordens-servico?atrasadas=1")}
+          className="glass p-6 rounded-2xl shadow-xl flex items-center justify-between relative overflow-hidden cursor-pointer hover:border-rose-500/30 transition-all"
+          title="Ver manutenções atrasadas no quadro"
+        >
           <div className="space-y-1">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">OS Atrasadas</span>
             <span className={`text-3xl font-extrabold block ${osAtrasadas > 0 ? "text-rose-500 animate-pulse" : "text-slate-300"}`}>
@@ -609,7 +623,7 @@ export default function Dashboard() {
                   
                   {/* Barra */}
                   <div 
-                    className="w-full bg-[#2D2B7A]/50 hover:bg-[#4A47FF] transition-all rounded-t-lg relative border-t border-white/10 shadow-[0_0_10px_rgba(45,43,122,0.1)]"
+                    className="w-full bg-[#0029F5]/50 hover:bg-[#19DDFF] transition-all rounded-t-lg relative border-t border-white/10 shadow-[0_0_10px_rgba(0,41,245,0.15)]"
                     style={{ height: `${heightPercent}%` }}
                   >
                     {/* Tooltip valor */}
@@ -824,7 +838,7 @@ export default function Dashboard() {
               {rankedClients.map((client, idx) => (
                 <div key={idx} className="flex justify-between items-center bg-white/2 p-3 rounded-xl border border-white/2">
                   <div className="space-y-0.5">
-                    <span className="text-xs text-[#c2c1ff] font-bold">#{idx + 1}</span>
+                    <span className="text-xs text-[#19DDFF] font-bold">#{idx + 1}</span>
                     <p className="text-sm font-semibold text-white tracking-tight leading-tight">{client.name}</p>
                   </div>
                   <span className="text-sm font-bold text-emerald-400">R$ {client.value.toFixed(2)}</span>
@@ -852,7 +866,7 @@ export default function Dashboard() {
                   </div>
                   <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
                     <div 
-                      className="bg-[#2D2B7A] h-full rounded-full" 
+                      className="bg-[#0029F5] h-full rounded-full" 
                       style={{ width: `${Math.min(100, (service.count / popularServices[0].count) * 100)}%` }}
                     />
                   </div>
@@ -880,7 +894,7 @@ export default function Dashboard() {
                   </div>
                   <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
                     <div 
-                      className="bg-[#4A47FF] h-full rounded-full" 
+                      className="bg-[#19DDFF] h-full rounded-full" 
                       style={{ width: `${source.percent}%` }}
                     />
                   </div>
