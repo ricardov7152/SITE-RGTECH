@@ -9,14 +9,15 @@ export const supabase = createClient(
   supabaseAnonKey || 'placeholder'
 );
 
-// Colunas padrão do Kanban de Manutenção (Trello-style)
+// Colunas padrão do Kanban de Manutenção (fluxo real da bancada até a entrega)
 export const DEFAULT_KANBAN_COLUMNS = [
   { id: 'recebido', title: 'Equipamentos recebidos', color: '#C1E8FF' },
   { id: 'em_analise', title: 'Em analise', color: '#7DA0CA' },
   { id: 'orcamento_enviado', title: 'Orçamento enviado', color: '#5483B3' },
-  { id: 'aprovado_execucao', title: 'Aprovado e Execução', color: '#38bdf8' },
-  { id: 'finalizado', title: 'Finalizado', color: '#34d399' },
   { id: 'aguardando_peca', title: 'Aguardando Peças', color: '#fbbf24' },
+  { id: 'aprovado_execucao', title: 'Aprovado e Execução', color: '#38bdf8' },
+  { id: 'finalizado', title: 'Pronto p/ retirada', color: '#34d399' },
+  { id: 'entregue', title: 'Entregue', color: '#22c55e' },
 ];
 
 const LEGACY_STATUS_MAP = {
@@ -28,7 +29,7 @@ const LEGACY_STATUS_MAP = {
   em_execucao: 'aprovado_execucao',
   finalizado: 'finalizado',
   pronto_retirada: 'finalizado',
-  entregue: 'finalizado',
+  entregue: 'entregue',
   aguardando_peca: 'aguardando_peca',
   cancelado: 'cancelado',
 };
@@ -38,7 +39,8 @@ const REVERSE_LEGACY_STATUS = {
   em_analise: 'em_diagnostico',
   orcamento_enviado: 'em_diagnostico',
   aprovado_execucao: 'em_execucao',
-  finalizado: 'entregue',
+  finalizado: 'pronto_retirada',
+  entregue: 'entregue',
   aguardando_peca: 'aguardando_peca',
 };
 
@@ -436,6 +438,8 @@ export const db = {
           desconto: Number(cardInput.desconto || 0),
           valor_total: Number(cardInput.valor_total || 0),
           condicoes_pagamento: cardInput.condicoes_pagamento || 'PIX / Cartão / Dinheiro',
+          arquivado: false,
+          status_alterado_em: new Date().toISOString(),
         };
 
         const { data, error } = await supabase.from('ordem_servico').insert([fullPayload]).select();
@@ -543,17 +547,22 @@ export const db = {
         const { data: dbItens } = await supabase.from('os_itens').select('*').eq('os_id', id);
         const osItens = dbItens || [];
 
+        const nowIso = new Date().toISOString();
         const updates = { 
           status, 
-          atualizado_em: new Date().toISOString(),
+          atualizado_em: nowIso,
           motivo_cancelamento: status === "cancelado" ? motivo_cancelamento : os.motivo_cancelamento
         };
+
+        if (statusAnterior !== statusNovoNorm) {
+          updates.status_alterado_em = nowIso;
+        }
 
         if (posicao !== null && posicao !== undefined) {
           updates.posicao = posicao;
         }
 
-        if (statusNovoNorm === "finalizado" || status === "entregue") {
+        if ((statusNovoNorm === "finalizado" || statusNovoNorm === "entregue") && !os.data_entrega_real) {
           updates.data_entrega_real = localDateISO();
         }
 
@@ -569,9 +578,10 @@ export const db = {
           if (legacyErr) throw legacyErr;
         }
 
-        // Baixa automática de estoque ao entrar em execução ou finalizar
-        const novoStatusBaixa = statusNovoNorm === "aprovado_execucao" || statusNovoNorm === "finalizado";
-        const anteriorStatusBaixa = statusAnterior === "aprovado_execucao" || statusAnterior === "finalizado";
+        // Baixa automática de estoque ao entrar em execução, finalizar ou entregar
+        const statusQueBaixam = ["aprovado_execucao", "finalizado", "entregue"];
+        const novoStatusBaixa = statusQueBaixam.includes(statusNovoNorm);
+        const anteriorStatusBaixa = statusQueBaixam.includes(statusAnterior);
 
         if (novoStatusBaixa && !anteriorStatusBaixa) {
           for (const item of osItens) {
@@ -585,8 +595,8 @@ export const db = {
           }
         }
 
-        // Ao finalizar: ativa garantias e gera lançamento financeiro "Pendente" (A Conferir)
-        if (statusNovoNorm === "finalizado") {
+        // Ao ficar pronto p/ retirada ou entregue: ativa garantias e gera lançamento financeiro (sem duplicar)
+        if (statusNovoNorm === "finalizado" || statusNovoNorm === "entregue") {
           const dataInicioStr = localDateISO();
           
           for (const item of osItens) {
@@ -613,6 +623,35 @@ export const db = {
         return { error: null };
       } catch (err) {
         console.error("Erro ao atualizar status da manutenção no Supabase:", err);
+        throw err;
+      }
+    },
+    archive: async (id, arquivado = true) => {
+      try {
+        const nowIso = new Date().toISOString();
+        const { error } = await supabase
+          .from('ordem_servico')
+          .update({ arquivado, atualizado_em: nowIso })
+          .eq('id', id);
+        if (error) throw error;
+        return { error: null };
+      } catch (err) {
+        console.error("Erro ao arquivar/restaurar manutenção no Supabase:", err);
+        throw err;
+      }
+    },
+    archiveMany: async (ids = [], arquivado = true) => {
+      if (!ids || ids.length === 0) return { error: null };
+      try {
+        const nowIso = new Date().toISOString();
+        const { error } = await supabase
+          .from('ordem_servico')
+          .update({ arquivado, atualizado_em: nowIso })
+          .in('id', ids);
+        if (error) throw error;
+        return { error: null };
+      } catch (err) {
+        console.error("Erro ao arquivar manutenções em lote no Supabase:", err);
         throw err;
       }
     },

@@ -267,6 +267,51 @@ section[id] {
   color: #0029F5 !important;
 }
 
+/* Badges de tempo na etapa e WhatsApp no modo claro */
+.light .kanban-stage-ok {
+  background-color: #ecfdf5 !important;
+  color: #047857 !important;
+  border-color: #a7f3d0 !important;
+}
+.light .kanban-stage-warn {
+  background-color: #fffbeb !important;
+  color: #b45309 !important;
+  border-color: #fde68a !important;
+}
+.light .kanban-stage-alert {
+  background-color: #fff1f2 !important;
+  color: #be123c !important;
+  border-color: #fecdd3 !important;
+}
+.light .kanban-wa-btn {
+  background-color: #ecfdf5 !important;
+  color: #047857 !important;
+  border-color: #6ee7b7 !important;
+}
+.light .kanban-wa-btn:hover {
+  background-color: #d1fae5 !important;
+}
+
+/* Combobox de busca de cliente no modo claro */
+.light .combobox-trigger {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+.light .combobox-dropdown {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 18px 40px -8px rgba(15, 23, 42, 0.2) !important;
+}
+.light .combobox-dropdown button {
+  color: #0f172a !important;
+}
+.light .combobox-dropdown button.bg-\[\#0029F5\] {
+  background-color: #0029F5 !important;
+  color: #ffffff !important;
+}
+
 /* Hover de linhas e itens */
 .light .hover\:bg-white\/5:hover,
 .light .hover\:bg-white\/10:hover {

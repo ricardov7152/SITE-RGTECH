@@ -1,5 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import { localDateISO } from "../../utils/date";
+import {
+  getStageAgeInfo,
+  WHATSAPP_TEMPLATE_OPTIONS,
+  buildWhatsAppStageMessage,
+  buildWhatsAppUrl,
+} from "../../utils/kanbanHelpers";
+import ClientCombobox from "../../components/ClientCombobox";
 import { db, DEFAULT_KANBAN_COLUMNS, normalizeKanbanStatus } from "../../services/supabase";
 import {
   DndContext,
@@ -45,6 +52,11 @@ import {
   AlertTriangle,
   Sparkles,
   Tag,
+  Archive,
+  ArchiveRestore,
+  CheckCircle2,
+  Info,
+  Send,
 } from "lucide-react";
 import {
   playPickupSound,
@@ -85,6 +97,7 @@ function KanbanCardView({
   isOverlay = false,
   onClick,
   onWhatsApp,
+  onArchive,
   dragHandleProps = {},
 }) {
   const hoje = localDateISO();
@@ -92,7 +105,11 @@ function KanbanCardView({
   const atrasada =
     card.data_entrega_prevista &&
     card.data_entrega_prevista < hoje &&
-    normStatus !== "finalizado";
+    normStatus !== "finalizado" &&
+    normStatus !== "entregue" &&
+    normStatus !== "cancelado";
+
+  const stageAge = getStageAgeInfo(card, normStatus);
 
   const tituloPrincipal =
     card.titulo && card.titulo !== "Manutenção de Equipamento"
@@ -110,9 +127,9 @@ function KanbanCardView({
           : "bg-gradient-to-br from-[#052659]/85 via-[#021024]/90 to-[#021024] border border-[#7DA0CA]/25 hover:border-[#C1E8FF]/60 hover:shadow-[0_10px_28px_rgba(5,38,89,0.65)] hover:-translate-y-0.5 kanban-card-box"
       }`}
     >
-      {/* Topo do Card: Número OS + Prioridade + Handle */}
-      <div className="flex items-center justify-between gap-2 mb-2.5">
-        <div className="flex items-center gap-2 flex-wrap">
+      {/* Topo do Card: Número OS + Prioridade + Ações */}
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#021024]/90 text-[#C1E8FF] border border-[#5483B3]/40 kanban-card-badge-os">
             {card.numero_os}
           </span>
@@ -125,13 +142,28 @@ function KanbanCardView({
           </span>
         </div>
 
-        <div
-          {...dragHandleProps}
-          onClick={(e) => e.stopPropagation()}
-          className="text-[#7DA0CA]/60 hover:text-[#C1E8FF] p-1 rounded-lg hover:bg-[#5483B3]/20 cursor-grab active:cursor-grabbing transition-colors"
-          title="Arrastar cartão"
-        >
-          <GripVertical size={15} />
+        <div className="flex items-center gap-0.5 shrink-0">
+          {normStatus === "entregue" && !card.arquivado && !isOverlay && onArchive && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onArchive(card);
+              }}
+              className="text-[#7DA0CA]/70 hover:text-amber-300 p-1 rounded-lg hover:bg-amber-500/15 transition-colors"
+              title="Arquivar manutenção entregue"
+            >
+              <Archive size={14} />
+            </button>
+          )}
+          <div
+            {...dragHandleProps}
+            onClick={(e) => e.stopPropagation()}
+            className="text-[#7DA0CA]/60 hover:text-[#C1E8FF] p-1 rounded-lg hover:bg-[#5483B3]/20 cursor-grab active:cursor-grabbing transition-colors"
+            title="Arrastar cartão"
+          >
+            <GripVertical size={15} />
+          </div>
         </div>
       </div>
 
@@ -141,10 +173,21 @@ function KanbanCardView({
       </h4>
 
       {/* Subtítulo Equipamento */}
-      <p className="text-[11px] text-[#7DA0CA] flex items-center gap-1.5 mb-2.5 truncate kanban-card-subtitle">
+      <p className="text-[11px] text-[#7DA0CA] flex items-center gap-1.5 mb-2 truncate kanban-card-subtitle">
         <Laptop size={12} className="shrink-0 text-[#5483B3]" />
         <span className="truncate">{subtituloEqp}</span>
       </p>
+
+      {/* Tempo na etapa */}
+      <div className="mb-2.5 flex items-center gap-1.5 flex-wrap">
+        <span
+          className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md border ${stageAge.badgeClass}`}
+          title="Tempo nesta coluna"
+        >
+          <Clock size={10} />
+          {stageAge.label}
+        </span>
+      </div>
 
       {/* Problema relatado resumido se houver */}
       {card.problema_relatado && (
@@ -171,8 +214,8 @@ function KanbanCardView({
               e.stopPropagation();
               onWhatsApp && onWhatsApp(card, client, columnTitle);
             }}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 border border-emerald-400/30 text-emerald-300 text-[10px] font-bold transition-all shrink-0"
-            title={`Conversar no WhatsApp com ${client.nome_completo}`}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 border border-emerald-400/30 text-emerald-300 text-[10px] font-bold transition-all shrink-0 kanban-wa-btn"
+            title={`Enviar mensagem da etapa (${columnTitle}) no WhatsApp`}
           >
             <MessageSquare size={12} />
             <span>WhatsApp</span>
@@ -180,11 +223,11 @@ function KanbanCardView({
         )}
       </div>
 
-      {/* Rodapé do Card: Status Atual + Data Prevista + Valor */}
+      {/* Rodapé do Card: Data Prevista + Valor */}
       <div className="flex items-center justify-between gap-2 mt-2.5 pt-2 border-t border-[#7DA0CA]/10 text-[10px]">
         <span
           className={`flex items-center gap-1 ${
-            atrasada ? "text-rose-400 font-bold" : "text-[#7DA0CA]"
+            atrasada ? "text-rose-400 font-bold" : "text-[#7DA0CA] kanban-card-date"
           }`}
         >
           <Calendar size={11} />
@@ -211,7 +254,7 @@ function KanbanCardView({
 }
 
 // ── Wrapper Sortable para cada Cartão ──
-function SortableKanbanCard({ card, client, columnTitle, totalValue, onClick, onWhatsApp }) {
+function SortableKanbanCard({ card, client, columnTitle, totalValue, onClick, onWhatsApp, onArchive }) {
   const {
     attributes,
     listeners,
@@ -260,6 +303,7 @@ function SortableKanbanCard({ card, client, columnTitle, totalValue, onClick, on
         totalValue={totalValue}
         onClick={() => onClick(card)}
         onWhatsApp={onWhatsApp}
+        onArchive={onArchive}
         dragHandleProps={{ ...attributes, ...listeners }}
       />
     </motion.div>
@@ -274,8 +318,12 @@ function KanbanColumn({
   cardTotals,
   onCardClick,
   onWhatsApp,
+  onArchiveCard,
+  onArchiveColumn,
   onQuickCreate,
   onRenameColumn,
+  onClientCreated,
+  onNotify,
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
@@ -396,6 +444,17 @@ function KanbanColumn({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          {column.id === "entregue" && cards.length > 0 && onArchiveColumn && (
+            <button
+              type="button"
+              onClick={() => onArchiveColumn(column.id, cards)}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-400/30 text-[10px] font-bold transition-all"
+              title="Arquivar todas as manutenções entregues desta coluna"
+            >
+              <Archive size={11} />
+              <span className="hidden sm:inline">Arquivar</span>
+            </button>
+          )}
           <span className="px-2 py-0.5 text-[11px] font-extrabold rounded-full bg-[#021024]/90 text-[#C1E8FF] border border-[#7DA0CA]/30 kanban-count-pill">
             {cards.length}
           </span>
@@ -414,11 +473,11 @@ function KanbanColumn({
       <AnimatePresence>
         {isAddingCard && (
           <motion.form
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
             onSubmit={handleQuickAddSubmit}
-            className="p-3 bg-[#021024]/90 border-b border-[#7DA0CA]/25 space-y-2.5 overflow-hidden"
+            className="p-3 bg-[#021024]/90 border-b border-[#7DA0CA]/25 space-y-2.5 relative z-20"
           >
             <textarea
               rows={2}
@@ -435,9 +494,9 @@ function KanbanColumn({
               }}
             />
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
               <select
-                className="bg-[#021024] border border-[#7DA0CA]/30 rounded-lg px-2 py-1.5 text-[11px] text-[#C1E8FF] focus:outline-none focus:border-[#C1E8FF]"
+                className="w-full bg-[#021024] border border-[#7DA0CA]/30 rounded-lg px-2 py-1.5 text-[11px] text-[#C1E8FF] focus:outline-none focus:border-[#C1E8FF]"
                 value={quickPriority}
                 onChange={(e) => setQuickPriority(e.target.value)}
               >
@@ -448,18 +507,15 @@ function KanbanColumn({
                 ))}
               </select>
 
-              <select
-                className="bg-[#021024] border border-[#7DA0CA]/30 rounded-lg px-2 py-1.5 text-[11px] text-[#C1E8FF] focus:outline-none focus:border-[#C1E8FF]"
+              <ClientCombobox
+                compact
+                clientes={clientes}
                 value={quickClientId}
-                onChange={(e) => setQuickClientId(e.target.value)}
-              >
-                <option value="">Cliente (Opcional)</option>
-                {clientes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome_completo}
-                  </option>
-                ))}
-              </select>
+                onChange={(id) => setQuickClientId(id)}
+                onClientCreated={onClientCreated}
+                onNotify={onNotify}
+                placeholder="Buscar ou criar cliente..."
+              />
             </div>
 
             <div className="flex items-center gap-2 pt-1">
@@ -519,6 +575,7 @@ function KanbanColumn({
                   totalValue={totalValue}
                   onClick={onCardClick}
                   onWhatsApp={onWhatsApp}
+                  onArchive={onArchiveCard}
                 />
               );
             })
@@ -547,6 +604,29 @@ export default function OrdemServico() {
   });
   const [loading, setLoading] = useState(true);
   const [audioMuted, setAudioMuted] = useState(() => isKanbanAudioMuted());
+  const [showArchived, setShowArchived] = useState(false);
+
+  // Sistema de Toasts e Diálogo de Confirmação (sem alert/confirm nativo)
+  const [toasts, setToasts] = useState([]);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  const addToast = (type, message) => {
+    const id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    setToasts((prev) => [...prev, { id, type, message }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3800);
+  };
+
+  const handleClientCreated = (newClient) => {
+    if (!newClient) return;
+    setClientes((prev) => {
+      if (prev.some((c) => c.id === newClient.id)) return prev;
+      return [...prev, newClient].sort((a, b) =>
+        (a.nome_completo || "").localeCompare(b.nome_completo || "")
+      );
+    });
+  };
 
   // Estado do Drag and Drop
   const [activeCard, setActiveCard] = useState(null);
@@ -574,6 +654,11 @@ export default function OrdemServico() {
   const [obsInternas, setObsInternas] = useState("");
   const [descontoOS, setDescontoOS] = useState(0);
   const [condicoesPagamento, setCondicoesPagamento] = useState("PIX ou Cartão");
+
+  // WhatsApp com modelos por etapa dentro do Modal
+  const [waTemplateKey, setWaTemplateKey] = useState("recebido");
+  const [waCustomMsg, setWaCustomMsg] = useState("");
+  const [waEditorOpen, setWaEditorOpen] = useState(false);
 
   // Adição de Peça / Serviço no Card
   const [selectedCatalogId, setSelectedCatalogId] = useState("");
@@ -611,17 +696,23 @@ export default function OrdemServico() {
       if (cfgRes.data) {
         setErpConfig(cfgRes.data);
         if (Array.isArray(cfgRes.data.kanban_colunas) && cfgRes.data.kanban_colunas.length > 0) {
-          // Mesclar mantendo os IDs padrão e aplicando títulos customizados
+          // Mesclar mantendo a ordem do fluxo real e migrando o título padrão legado 'Finalizado' -> 'Pronto p/ retirada'
           const savedCols = cfgRes.data.kanban_colunas;
           const merged = DEFAULT_KANBAN_COLUMNS.map((defCol) => {
             const found = savedCols.find((c) => c.id === defCol.id);
-            return found ? { ...defCol, title: found.title || defCol.title } : defCol;
+            if (!found) return defCol;
+            const title =
+              defCol.id === "finalizado" && found.title === "Finalizado"
+                ? defCol.title
+                : found.title || defCol.title;
+            return { ...defCol, title };
           });
           setColumns(merged);
         }
       }
     } catch (err) {
       console.error("Erro ao carregar quadro de Manutenção:", err);
+      addToast("error", "Erro ao carregar o quadro de manutenção.");
     } finally {
       setLoading(false);
     }
@@ -653,15 +744,17 @@ export default function OrdemServico() {
       const nextCfg = { ...erpConfig, kanban_colunas: updatedCols };
       setErpConfig(nextCfg);
       await db.configuracoes.upsert(nextCfg);
+      addToast("success", `Coluna renomeada para "${newTitle}".`);
     } catch (err) {
       console.error("Erro ao salvar título da coluna:", err);
+      addToast("error", "Erro ao salvar o nome da coluna.");
     }
   };
 
   // Criar cartão rápido no topo da coluna
   const handleQuickCreateCard = async ({ status, titulo, prioridade, cliente_id }) => {
     try {
-      const cardsInCol = ordens.filter((o) => normalizeKanbanStatus(o.status) === status);
+      const cardsInCol = ordens.filter((o) => !o.arquivado && normalizeKanbanStatus(o.status) === status);
       const minPos = cardsInCol.reduce((min, c) => Math.min(min, Number(c.posicao ?? 0)), 0);
       const { data: created } = await db.ordem_servico.createCard({
         status,
@@ -675,11 +768,61 @@ export default function OrdemServico() {
       if (created) {
         playDropSound();
         setOrdens((prev) => [created, ...prev]);
+        addToast("success", `Cartão ${created.numero_os} criado!`);
       }
     } catch (err) {
       console.error(err);
-      alert("Não foi possível criar o cartão de manutenção.");
+      addToast("error", "Não foi possível criar o cartão de manutenção.");
     }
+  };
+
+  // Arquivar ou restaurar cartão individual
+  const handleArchiveCard = async (card, arquivar = true) => {
+    try {
+      await db.ordem_servico.archive(card.id, arquivar);
+      setOrdens((prev) =>
+        prev.map((o) => (o.id === card.id ? { ...o, arquivado: arquivar } : o))
+      );
+      if (selectedOS?.id === card.id) {
+        setSelectedOS((prev) => (prev ? { ...prev, arquivado: arquivar } : prev));
+      }
+      addToast(
+        "success",
+        arquivar
+          ? `Cartão ${card.numero_os} arquivado.`
+          : `Cartão ${card.numero_os} restaurado para o quadro.`
+      );
+    } catch (err) {
+      console.error(err);
+      addToast("error", "Erro ao atualizar arquivamento do cartão.");
+    }
+  };
+
+  // Arquivar todos os cartões da coluna Entregue
+  const handleArchiveColumn = (columnId, cardsInCol) => {
+    if (!cardsInCol || cardsInCol.length === 0) return;
+    setConfirmDialog({
+      title: "Arquivar manutenções entregues?",
+      message: `Isso vai arquivar ${cardsInCol.length} cartão(ões) da coluna "Entregue". Eles continuam salvos no banco, entram nos relatórios e podem ser restaurados em "Arquivadas".`,
+      confirmLabel: `Arquivar (${cardsInCol.length})`,
+      danger: false,
+      onConfirm: async () => {
+        const ids = cardsInCol.map((c) => c.id);
+        try {
+          await db.ordem_servico.archiveMany(ids, true);
+          const idSet = new Set(ids);
+          setOrdens((prev) =>
+            prev.map((o) => (idSet.has(o.id) ? { ...o, arquivado: true } : o))
+          );
+          addToast("success", `${ids.length} manutenção(ões) arquivada(s) com sucesso.`);
+        } catch (err) {
+          console.error(err);
+          addToast("error", "Não foi possível arquivar os cartões.");
+        } finally {
+          setConfirmDialog(null);
+        }
+      },
+    });
   };
 
   // Disparo de Confete ao concluir manutenção
@@ -772,7 +915,7 @@ export default function OrdemServico() {
 
     // Reordenar cards dentro da coluna destino
     const columnCards = ordens
-      .filter((o) => normalizeKanbanStatus(o.status) === targetColumnId)
+      .filter((o) => !o.arquivado && normalizeKanbanStatus(o.status) === targetColumnId)
       .sort((a, b) => Number(a.posicao ?? 0) - Number(b.posicao ?? 0));
 
     const oldIdxInCol = columnCards.findIndex((c) => c.id === activeId);
@@ -791,6 +934,10 @@ export default function OrdemServico() {
       posMap[c.id] = idx;
     });
 
+    const previousColumnId = normalizeKanbanStatus(draggedOriginal.status);
+    const stageChanged = previousColumnId !== targetColumnId;
+    const nowIso = new Date().toISOString();
+
     setOrdens((prev) => {
       return prev.map((o) => {
         if (o.id === activeId) {
@@ -798,6 +945,11 @@ export default function OrdemServico() {
             ...o,
             status: targetColumnId,
             posicao: posMap[o.id] !== undefined ? posMap[o.id] : 0,
+            status_alterado_em: stageChanged ? nowIso : o.status_alterado_em,
+            data_entrega_real:
+              (targetColumnId === "finalizado" || targetColumnId === "entregue") && !o.data_entrega_real
+                ? localDateISO()
+                : o.data_entrega_real,
           };
         }
         if (posMap[o.id] !== undefined) {
@@ -807,15 +959,18 @@ export default function OrdemServico() {
       });
     });
 
-    const previousColumnId = normalizeKanbanStatus(draggedOriginal.status);
     if (targetColumnId === "finalizado" && previousColumnId !== "finalizado") {
       triggerFinalizadoCelebration();
+      addToast("success", "Pronto p/ retirada! Lançamento financeiro gerado para conferência.");
+    } else if (targetColumnId === "entregue" && previousColumnId !== "entregue") {
+      playDropSound();
+      addToast("success", "Equipamento marcado como Entregue!");
     } else {
       playDropSound();
     }
 
     try {
-      if (previousColumnId !== targetColumnId) {
+      if (stageChanged) {
         await db.ordem_servico.updateStatus(activeId, targetColumnId, null, posMap[activeId] ?? 0);
       }
       await db.ordem_servico.updatePositions(
@@ -823,31 +978,33 @@ export default function OrdemServico() {
       );
     } catch (err) {
       console.error("Erro ao sincronizar movimento do cartão:", err);
+      addToast("error", "Falha ao sincronizar movimento; recarregando quadro.");
       loadData();
     }
   };
 
-  // Enviar WhatsApp direto para o cliente do cartão
-  const handleWhatsAppClient = (card, client, colTitle) => {
+  // Enviar WhatsApp com modelo inteligente por etapa
+  const handleWhatsAppClient = (card, client, colTitle, customText = null) => {
     if (!client || !client.telefone) {
-      alert("Este cliente não possui número de WhatsApp cadastrado.");
+      addToast("warning", "Este cliente não possui número de WhatsApp cadastrado.");
       return;
     }
-    const cleanPhone = client.telefone.replace(/\D/g, "");
     const totalVal = cardTotals[card.id] ?? Number(card.valor_total || 0);
-    const titulo =
-      card.titulo && card.titulo !== "Manutenção de Equipamento"
-        ? card.titulo
-        : `${card.equipamento_tipo || "Equipamento"} ${card.equipamento_marca || ""}`.trim();
-
+    const stageKey = normalizeKanbanStatus(card.status);
     const msg =
-      `Olá, *${client.nome_completo}*! Aqui é a equipe da *RG TECH Computadores*.\n\n` +
-      `Informamos sobre a manutenção *#${card.numero_os}* (*${titulo}*):\n` +
-      `📌 *Etapa atual:* ${colTitle}\n` +
-      (totalVal > 0 ? `💰 *Valor Total:* R$ ${Number(totalVal).toFixed(2)}\n` : "") +
-      `\nQualquer dúvida estamos à disposição!`;
+      customText ||
+      buildWhatsAppStageMessage(stageKey, {
+        card,
+        client,
+        columnTitle: colTitle,
+        totalValue: totalVal,
+      });
 
-    const url = `https://api.whatsapp.com/send?phone=55${cleanPhone}&text=${encodeURIComponent(msg)}`;
+    const url = buildWhatsAppUrl(client.telefone, msg);
+    if (!url) {
+      addToast("warning", "Número de telefone inválido para WhatsApp.");
+      return;
+    }
     window.open(url, "_blank");
   };
 
@@ -857,6 +1014,7 @@ export default function OrdemServico() {
       const { data } = await db.ordem_servico.get(osCard.id);
       const fullOS = data || osCard;
       const itens = fullOS.itens || allOsItens.filter((i) => i.os_id === osCard.id);
+      const normStatus = normalizeKanbanStatus(fullOS.status);
 
       setSelectedOS(fullOS);
       setOsItens(itens);
@@ -866,7 +1024,7 @@ export default function OrdemServico() {
       );
       setCardPrioridade(fullOS.prioridade || "Média");
       setCardClienteId(fullOS.cliente_id || "");
-      setStatusOS(normalizeKanbanStatus(fullOS.status));
+      setStatusOS(normStatus);
       setDataPrevista(fullOS.data_entrega_prevista || localDateISO());
       setEqpTipo(fullOS.equipamento_tipo || "");
       setEqpMarca(fullOS.equipamento_marca || "");
@@ -879,6 +1037,23 @@ export default function OrdemServico() {
       setDescontoOS(Number(fullOS.desconto || 0));
       setCondicoesPagamento(fullOS.condicoes_pagamento || "PIX ou Cartão");
 
+      // Inicializar modelo de WhatsApp pela etapa do cartão
+      const cli = clientes.find((c) => c.id === fullOS.cliente_id);
+      const sub = itens.reduce(
+        (acc, item) => acc + Number(item.valor_unitario || 0) * Number(item.quantidade || 1),
+        0
+      );
+      const tot = Math.max(0, sub - Number(fullOS.desconto || 0));
+      setWaTemplateKey(normStatus);
+      setWaCustomMsg(
+        buildWhatsAppStageMessage(normStatus, {
+          card: fullOS,
+          client: cli,
+          totalValue: tot > 0 ? tot : Number(fullOS.valor_total || 0),
+        })
+      );
+      setWaEditorOpen(false);
+
       setSelectedCatalogId("");
       setCustomItemNome("");
       setItemQtd(1);
@@ -886,7 +1061,7 @@ export default function OrdemServico() {
       setModalOpen(true);
     } catch (err) {
       console.error(err);
-      alert("Erro ao abrir detalhes do cartão.");
+      addToast("error", "Erro ao abrir detalhes do cartão.");
     }
   };
 
@@ -915,7 +1090,7 @@ export default function OrdemServico() {
     }
 
     if (!nome) {
-      alert("Selecione um item do catálogo ou digite a descrição do serviço/peça.");
+      addToast("warning", "Selecione um item do catálogo ou digite a descrição do serviço/peça.");
       return;
     }
 
@@ -940,10 +1115,11 @@ export default function OrdemServico() {
         setCustomItemNome("");
         setItemQtd(1);
         setItemPreco(0);
+        addToast("success", `Item "${nome}" adicionado ao cartão.`);
       }
     } catch (err) {
       console.error(err);
-      alert("Erro ao adicionar item ao cartão.");
+      addToast("error", "Erro ao adicionar item ao cartão.");
     }
   };
 
@@ -952,13 +1128,14 @@ export default function OrdemServico() {
       await db.os_itens.delete(itemId);
       setOsItens((prev) => prev.filter((i) => i.id !== itemId));
       setAllOsItens((prev) => prev.filter((i) => i.id !== itemId));
+      addToast("info", "Item removido do cartão.");
     } catch (err) {
       console.error(err);
-      alert("Erro ao remover item.");
+      addToast("error", "Erro ao remover item.");
     }
   };
 
-  // Salvar todas as edições do Cartão
+  // Salvar todas as edições do Cartão (atualização local, sem recarregar o quadro inteiro)
   const handleSaveCardModal = async (e) => {
     e.preventDefault();
     if (!selectedOS) return;
@@ -990,31 +1167,64 @@ export default function OrdemServico() {
     try {
       await db.ordem_servico.update(selectedOS.id, updates);
       const prevStatusNorm = normalizeKanbanStatus(selectedOS.status);
-      if (statusOS !== prevStatusNorm) {
+      const statusChanged = statusOS !== prevStatusNorm;
+      const nowIso = new Date().toISOString();
+
+      if (statusChanged) {
         await db.ordem_servico.updateStatus(selectedOS.id, statusOS);
         if (statusOS === "finalizado") {
           triggerFinalizadoCelebration();
         }
       }
+
+      setOrdens((prev) =>
+        prev.map((o) =>
+          o.id === selectedOS.id
+            ? {
+                ...o,
+                ...updates,
+                status: statusOS,
+                atualizado_em: nowIso,
+                status_alterado_em: statusChanged ? nowIso : o.status_alterado_em,
+                data_entrega_real:
+                  (statusOS === "finalizado" || statusOS === "entregue") && !o.data_entrega_real
+                    ? localDateISO()
+                    : o.data_entrega_real,
+              }
+            : o
+        )
+      );
+
       setModalOpen(false);
-      await loadData();
+      addToast("success", `Cartão ${selectedOS.numero_os} salvo com sucesso!`);
     } catch (err) {
       console.error(err);
-      alert("Erro ao salvar alterações do cartão.");
+      addToast("error", "Erro ao salvar alterações do cartão.");
     }
   };
 
-  const handleDeleteCard = async () => {
+  const handleDeleteCard = () => {
     if (!selectedOS) return;
-    if (!window.confirm(`Deseja realmente excluir o cartão ${selectedOS.numero_os}?`)) return;
-    try {
-      await db.ordem_servico.delete(selectedOS.id);
-      setModalOpen(false);
-      setOrdens((prev) => prev.filter((o) => o.id !== selectedOS.id));
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao excluir cartão.");
-    }
+    const targetOS = selectedOS;
+    setConfirmDialog({
+      title: `Excluir cartão ${targetOS.numero_os}?`,
+      message: "Esta ação remove permanentemente o cartão e seus itens do banco de dados.",
+      confirmLabel: "Excluir permanentemente",
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await db.ordem_servico.delete(targetOS.id);
+          setModalOpen(false);
+          setOrdens((prev) => prev.filter((o) => o.id !== targetOS.id));
+          addToast("info", `Cartão ${targetOS.numero_os} excluído.`);
+        } catch (err) {
+          console.error(err);
+          addToast("error", "Erro ao excluir cartão.");
+        } finally {
+          setConfirmDialog(null);
+        }
+      },
+    });
   };
 
   // Gerar PDF A4 (Orçamento / Ordem de Serviço de Manutenção) direto de dentro do Card
@@ -1032,10 +1242,16 @@ export default function OrdemServico() {
     };
 
     html2pdf().from(pdfRef.current).set(opt).save();
+    addToast("success", "PDF gerado e baixado!");
   };
 
-  // Filtragem de cartões
+  const archivedCount = ordens.filter((o) => Boolean(o.arquivado)).length;
+
+  // Filtragem de cartões (respeita ativos vs arquivados)
   const filteredOrdens = ordens.filter((os) => {
+    const isArch = Boolean(os.arquivado);
+    if (showArchived ? !isArch : isArch) return false;
+
     const client = clientes.find((c) => c.id === os.cliente_id);
     const clientName = client ? client.nome_completo.toLowerCase() : "";
     const term = search.toLowerCase();
@@ -1057,7 +1273,9 @@ export default function OrdemServico() {
     const isAtrasada =
       os.data_entrega_prevista &&
       os.data_entrega_prevista < hoje &&
-      normStatus !== "finalizado";
+      normStatus !== "finalizado" &&
+      normStatus !== "entregue" &&
+      normStatus !== "cancelado";
 
     const matchesAtrasadas = !filterAtrasadas || isAtrasada;
     return matchesSearch && matchesPriority && matchesAtrasadas;
@@ -1091,19 +1309,21 @@ export default function OrdemServico() {
               <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
                 Manutenção
                 <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-[#052659] text-[#C1E8FF] border border-[#7DA0CA]/30">
-                  Kanban Interativo
+                  {showArchived ? "Arquivo" : "Kanban Interativo"}
                 </span>
               </h1>
               <p className="text-[#7DA0CA] text-xs md:text-sm">
-                Arraste os cartões entre as colunas para atualizar o status automaticamente. Clique no título da coluna para renomear.
+                {showArchived
+                  ? "Manutenções arquivadas. Clique em Restaurar para voltar com o cartão para o quadro."
+                  : "Arraste os cartões entre as colunas para atualizar o status automaticamente. Clique no título da coluna para renomear."}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Busca, Filtro de Prioridade, Atrasadas e Som */}
+        {/* Busca, Filtro de Prioridade, Atrasadas, Arquivadas e Som */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-[230px] flex-1 sm:flex-initial">
+          <div className="relative min-w-[220px] flex-1 sm:flex-initial">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7DA0CA]" />
             <input
               type="text"
@@ -1127,17 +1347,33 @@ export default function OrdemServico() {
             ))}
           </select>
 
-          <label className="flex items-center gap-2 cursor-pointer bg-[#021024]/80 hover:bg-[#052659]/60 border border-[#7DA0CA]/30 rounded-xl px-3.5 py-2.5 text-xs text-white transition-all select-none">
-            <input
-              type="checkbox"
-              checked={filterAtrasadas}
-              onChange={(e) => setFilterAtrasadas(e.target.checked)}
-              className="w-3.5 h-3.5 rounded border-[#7DA0CA]/40 bg-[#021024] text-[#5483B3]"
-            />
-            <span className="flex items-center gap-1 font-bold text-rose-300 uppercase tracking-tight">
-              <Clock size={13} /> Atrasadas
-            </span>
-          </label>
+          {!showArchived && (
+            <label className="flex items-center gap-2 cursor-pointer bg-[#021024]/80 hover:bg-[#052659]/60 border border-[#7DA0CA]/30 rounded-xl px-3.5 py-2.5 text-xs text-white transition-all select-none">
+              <input
+                type="checkbox"
+                checked={filterAtrasadas}
+                onChange={(e) => setFilterAtrasadas(e.target.checked)}
+                className="w-3.5 h-3.5 rounded border-[#7DA0CA]/40 bg-[#021024] text-[#5483B3]"
+              />
+              <span className="flex items-center gap-1 font-bold text-rose-300 uppercase tracking-tight">
+                <Clock size={13} /> Atrasadas
+              </span>
+            </label>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowArchived((prev) => !prev)}
+            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border text-xs font-bold transition-all ${
+              showArchived
+                ? "bg-amber-500/20 border-amber-400/50 text-amber-300"
+                : "bg-[#021024]/80 border-[#7DA0CA]/30 text-[#C1E8FF] hover:bg-[#052659]/60"
+            }`}
+            title={showArchived ? "Voltar para o quadro ativo" : "Ver manutenções arquivadas"}
+          >
+            <Archive size={14} />
+            <span>{showArchived ? "Voltar ao Quadro" : `Arquivadas (${archivedCount})`}</span>
+          </button>
 
           <button
             type="button"
@@ -1154,13 +1390,88 @@ export default function OrdemServico() {
         </div>
       </div>
 
-      {/* ── Quadro Kanban Horizontal (6 Colunas) ── */}
+      {/* ── Quadro Kanban Horizontal (7 Colunas) ou Visão de Arquivadas ── */}
       {loading ? (
         <div className="glass p-12 rounded-2xl text-center text-[#C1E8FF] flex flex-col items-center gap-3">
           <div className="w-9 h-9 border-4 border-[#5483B3] border-t-[#C1E8FF] rounded-full animate-spin" />
           <span className="text-xs uppercase tracking-widest font-bold text-[#7DA0CA]">
             Carregando quadro de manutenção...
           </span>
+        </div>
+      ) : showArchived ? (
+        <div className="glass p-5 rounded-2xl border border-[#7DA0CA]/25 space-y-4">
+          <div className="flex items-center justify-between border-b border-[#7DA0CA]/20 pb-3">
+            <h2 className="text-sm font-extrabold uppercase tracking-wider text-white flex items-center gap-2">
+              <Archive size={16} className="text-amber-400" />
+              Manutenções Arquivadas ({filteredOrdens.length})
+            </h2>
+            <button
+              type="button"
+              onClick={() => setShowArchived(false)}
+              className="text-xs font-bold text-[#19DDFF] hover:underline"
+            >
+              Voltar para o quadro ativo
+            </button>
+          </div>
+
+          {filteredOrdens.length === 0 ? (
+            <div className="py-12 text-center text-xs text-[#7DA0CA]">
+              Nenhuma manutenção arquivada encontrada.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredOrdens.map((card) => {
+                const client = clientes.find((c) => c.id === card.cliente_id);
+                const totalValue = cardTotals[card.id] ?? Number(card.valor_total || 0);
+                const colTitle =
+                  columns.find((c) => c.id === normalizeKanbanStatus(card.status))?.title ||
+                  "Entregue";
+                const tituloCard =
+                  card.titulo && card.titulo !== "Manutenção de Equipamento"
+                    ? card.titulo
+                    : `${card.equipamento_tipo || "Equipamento"} ${card.equipamento_marca || ""}`.trim();
+
+                return (
+                  <div
+                    key={card.id}
+                    onClick={() => handleOpenCardModal(card)}
+                    className="kanban-card-box p-4 rounded-2xl bg-[#021024]/80 border border-[#7DA0CA]/25 hover:border-[#C1E8FF]/50 cursor-pointer transition-all flex flex-col justify-between gap-3"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-[#052659] text-[#C1E8FF] kanban-card-badge-os">
+                          {card.numero_os}
+                        </span>
+                        <span className="text-[10px] font-semibold text-emerald-400">{colTitle}</span>
+                      </div>
+                      <h4 className="text-sm font-bold text-white kanban-card-title truncate">
+                        {tituloCard}
+                      </h4>
+                      <p className="text-xs text-[#7DA0CA] kanban-card-subtitle truncate">
+                        {client ? client.nome_completo : "Sem cliente vinculado"}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-[#7DA0CA]/15">
+                      <span className="text-xs font-extrabold text-[#C1E8FF] kanban-card-price px-2 py-0.5 rounded-md bg-[#052659]/60">
+                        R$ {Number(totalValue).toFixed(2)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleArchiveCard(card, false);
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#0029F5]/20 hover:bg-[#0029F5]/35 text-[#19DDFF] border border-[#19DDFF]/30 text-[11px] font-bold transition-all"
+                      >
+                        <ArchiveRestore size={12} /> Restaurar
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : (
         <DndContext
@@ -1185,8 +1496,12 @@ export default function OrdemServico() {
                   cardTotals={cardTotals}
                   onCardClick={handleOpenCardModal}
                   onWhatsApp={handleWhatsAppClient}
+                  onArchiveCard={(c) => handleArchiveCard(c, true)}
+                  onArchiveColumn={handleArchiveColumn}
                   onQuickCreate={handleQuickCreateCard}
                   onRenameColumn={handleRenameColumn}
+                  onClientCreated={handleClientCreated}
+                  onNotify={addToast}
                 />
               );
             })}
@@ -1245,7 +1560,22 @@ export default function OrdemServico() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => handleArchiveCard(selectedOS, !selectedOS.arquivado)}
+                  className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all ${
+                    selectedOS.arquivado
+                      ? "bg-[#0029F5]/20 hover:bg-[#0029F5]/35 text-[#19DDFF] border-[#19DDFF]/40"
+                      : "bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border-amber-400/35"
+                  }`}
+                  title={selectedOS.arquivado ? "Restaurar para o quadro" : "Arquivar manutenção"}
+                >
+                  {selectedOS.arquivado ? <ArchiveRestore size={14} /> : <Archive size={14} />}
+                  <span className="hidden sm:inline">
+                    {selectedOS.arquivado ? "Restaurar" : "Arquivar"}
+                  </span>
+                </button>
                 <button
                   type="button"
                   onClick={handleGenerateCardPDF}
@@ -1282,7 +1612,18 @@ export default function OrdemServico() {
                   <select
                     className="w-full bg-[#021024] border border-[#7DA0CA]/35 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-[#C1E8FF]"
                     value={statusOS}
-                    onChange={(e) => setStatusOS(e.target.value)}
+                    onChange={(e) => {
+                      const nextStatus = e.target.value;
+                      setStatusOS(nextStatus);
+                      setWaTemplateKey(nextStatus);
+                      setWaCustomMsg(
+                        buildWhatsAppStageMessage(nextStatus, {
+                          card: { ...selectedOS, titulo: cardTitulo, condicoes_pagamento: condicoesPagamento },
+                          client: modalClient,
+                          totalValue: modalTotalFinal,
+                        })
+                      );
+                    }}
                   >
                     {columns.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -1313,18 +1654,23 @@ export default function OrdemServico() {
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-[#7DA0CA] mb-1">
                     Cliente Vinculado
                   </label>
-                  <select
-                    className="w-full bg-[#021024] border border-[#7DA0CA]/35 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-[#C1E8FF]"
+                  <ClientCombobox
+                    clientes={clientes}
                     value={cardClienteId}
-                    onChange={(e) => setCardClienteId(e.target.value)}
-                  >
-                    <option value="">Selecione um cliente...</option>
-                    {clientes.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nome_completo}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(nextClientId) => {
+                      setCardClienteId(nextClientId);
+                      const nextCli = clientes.find((c) => c.id === nextClientId);
+                      setWaCustomMsg(
+                        buildWhatsAppStageMessage(waTemplateKey, {
+                          card: { ...selectedOS, titulo: cardTitulo, condicoes_pagamento: condicoesPagamento },
+                          client: nextCli,
+                          totalValue: modalTotalFinal,
+                        })
+                      );
+                    }}
+                    onClientCreated={handleClientCreated}
+                    onNotify={addToast}
+                  />
                 </div>
 
                 <div>
@@ -1340,33 +1686,80 @@ export default function OrdemServico() {
                 </div>
               </div>
 
-              {/* Atalho WhatsApp do Cliente dentro do Modal */}
+              {/* Atalho WhatsApp com Modelos por Etapa */}
               {modalClient && (
-                <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-[#052659]/40 border border-[#7DA0CA]/25">
-                  <div className="text-xs text-[#C1E8FF] space-x-3">
-                    <span>
-                      <strong>Cliente:</strong> {modalClient.nome_completo}
-                    </span>
-                    <span>
-                      <strong>Tel:</strong> {modalClient.telefone || "N/D"}
-                    </span>
-                    <span>
-                      <strong>CPF/CNPJ:</strong> {modalClient.cpf_cnpj || "N/D"}
-                    </span>
+                <div className="px-4 py-3.5 rounded-2xl bg-[#052659]/40 border border-[#7DA0CA]/25 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="text-xs text-[#C1E8FF] space-x-3">
+                      <span>
+                        <strong>Cliente:</strong> {modalClient.nome_completo}
+                      </span>
+                      <span>
+                        <strong>Tel:</strong> {modalClient.telefone || "N/D"}
+                      </span>
+                      <span>
+                        <strong>CPF/CNPJ:</strong> {modalClient.cpf_cnpj || "N/D"}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select
+                        value={waTemplateKey}
+                        onChange={(e) => {
+                          const tpl = e.target.value;
+                          setWaTemplateKey(tpl);
+                          setWaCustomMsg(
+                            buildWhatsAppStageMessage(tpl, {
+                              card: { ...selectedOS, titulo: cardTitulo, condicoes_pagamento: condicoesPagamento },
+                              client: modalClient,
+                              totalValue: modalTotalFinal,
+                            })
+                          );
+                        }}
+                        className="bg-[#021024] border border-[#7DA0CA]/35 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold text-[#C1E8FF] focus:outline-none"
+                        title="Escolher modelo de mensagem por etapa"
+                      >
+                        {WHATSAPP_TEMPLATE_OPTIONS.map((opt) => (
+                          <option key={opt.id} value={opt.id}>
+                            Modelo: {opt.label}
+                          </option>
+                        ))}
+                      </select>
+
+                      <button
+                        type="button"
+                        onClick={() => setWaEditorOpen((prev) => !prev)}
+                        className="px-2.5 py-1.5 rounded-xl border border-[#7DA0CA]/30 text-[11px] font-bold text-[#7DA0CA] hover:text-white hover:bg-white/5 transition-all"
+                      >
+                        {waEditorOpen ? "Ocultar texto" : "Editar texto"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleWhatsAppClient(
+                            { ...selectedOS, titulo: cardTitulo, valor_total: modalTotalFinal, status: statusOS },
+                            modalClient,
+                            columns.find((c) => c.id === statusOS)?.title || statusOS,
+                            waCustomMsg
+                          )
+                        }
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/40 text-emerald-300 text-xs font-bold transition-all kanban-wa-btn"
+                      >
+                        <Send size={13} /> Enviar WhatsApp
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleWhatsAppClient(
-                        { ...selectedOS, titulo: cardTitulo, valor_total: modalTotalFinal },
-                        modalClient,
-                        columns.find((c) => c.id === statusOS)?.title || statusOS
-                      )
-                    }
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/40 text-emerald-300 text-xs font-bold transition-all"
-                  >
-                    <MessageSquare size={14} /> Chamar Cliente no WhatsApp
-                  </button>
+
+                  {waEditorOpen && (
+                    <textarea
+                      rows={4}
+                      value={waCustomMsg}
+                      onChange={(e) => setWaCustomMsg(e.target.value)}
+                      className="w-full bg-[#021024] border border-[#7DA0CA]/35 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#C1E8FF]"
+                      placeholder="Edite a mensagem antes de enviar..."
+                    />
+                  )}
                 </div>
               )}
 
@@ -1978,6 +2371,89 @@ export default function OrdemServico() {
           </div>
         </div>
       )}
+
+      {/* ── Diálogo de Confirmação In-App (substitui window.confirm) ── */}
+      {confirmDialog && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#021024]/80 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="kanban-modal w-full max-w-md rounded-2xl bg-[#052659] border border-[#7DA0CA]/35 shadow-2xl p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                  confirmDialog.danger
+                    ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                    : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                }`}
+              >
+                <AlertTriangle size={20} />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-extrabold text-white">{confirmDialog.title}</h3>
+                <p className="text-xs text-[#7DA0CA] leading-relaxed">{confirmDialog.message}</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDialog(null)}
+                className="px-4 py-2 rounded-xl border border-[#7DA0CA]/30 text-xs font-bold text-[#C1E8FF] hover:bg-white/5"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmDialog.onConfirm}
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold text-white transition-all shadow-md ${
+                  confirmDialog.danger
+                    ? "bg-rose-600 hover:bg-rose-500"
+                    : "bg-[#0029F5] hover:bg-[#19DDFF] hover:text-[#05050c]"
+                }`}
+              >
+                {confirmDialog.confirmLabel || "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Notificações Toast (substituem alert nativo) ── */}
+      <div className="fixed bottom-5 right-5 z-[70] flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0">
+        <AnimatePresence>
+          {toasts.map((t) => (
+            <motion.div
+              key={t.id}
+              initial={{ opacity: 0, y: 16, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.96 }}
+              transition={{ duration: 0.18 }}
+              className={`kanban-toast pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-2xl border shadow-2xl backdrop-blur-xl text-xs font-bold ${
+                t.type === "error"
+                  ? "bg-rose-950/95 border-rose-400/40 text-rose-200"
+                  : t.type === "warning"
+                  ? "bg-amber-950/95 border-amber-400/40 text-amber-200"
+                  : t.type === "info"
+                  ? "bg-[#021024]/95 border-[#7DA0CA]/40 text-[#C1E8FF]"
+                  : "bg-emerald-950/95 border-emerald-400/40 text-emerald-200"
+              }`}
+            >
+              {t.type === "error" || t.type === "warning" ? (
+                <AlertTriangle size={16} className="shrink-0" />
+              ) : t.type === "info" ? (
+                <Info size={16} className="shrink-0" />
+              ) : (
+                <CheckCircle2 size={16} className="shrink-0" />
+              )}
+              <span className="flex-1 leading-snug">{t.message}</span>
+              <button
+                type="button"
+                onClick={() => setToasts((prev) => prev.filter((item) => item.id !== t.id))}
+                className="opacity-70 hover:opacity-100 p-0.5"
+              >
+                <X size={14} />
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

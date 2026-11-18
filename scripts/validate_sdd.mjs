@@ -162,20 +162,26 @@ check(
   'F002-04: Adição rápida de cartão no topo da raia ("Título do cartão...") presente',
   osJsx.includes('Título do cartão...')
 );
+const kanbanHelpersJs = fs.existsSync(path.join(rootDir, 'src/utils/kanbanHelpers.js'))
+  ? fs.readFileSync(path.join(rootDir, 'src/utils/kanbanHelpers.js'), 'utf8')
+  : '';
 check(
   'F002-05: Cards possuem Prioridade, ícone/link direto para WhatsApp e geração de PDF',
-  osJsx.includes('prioridade') && osJsx.includes('api.whatsapp.com') && osJsx.includes('html2pdf')
+  osJsx.includes('prioridade') &&
+  (osJsx.includes('api.whatsapp.com') || kanbanHelpersJs.includes('api.whatsapp.com')) &&
+  osJsx.includes('html2pdf')
 );
 
-// 11. Feature 002 - Gatilho financeiro ao mover para Finalizado e desacoplamento de Orçamento Avulso
+// 11. Feature 002 - Gatilho financeiro ao mover para Pronto/Finalizado e desacoplamento de Orçamento Avulso
 check(
-  'F002-06: supabase.js possui DEFAULT_KANBAN_COLUMNS com as 6 raias e triggerFinanceiroFromOS ao finalizar',
+  'F002-06: supabase.js possui DEFAULT_KANBAN_COLUMNS com o fluxo da bancada e triggerFinanceiroFromOS',
   supabaseJs.includes('Equipamentos recebidos') &&
   supabaseJs.includes('Em analise') &&
   supabaseJs.includes('Orçamento enviado') &&
-  supabaseJs.includes('Aprovado e Execução') &&
-  supabaseJs.includes('Finalizado') &&
   supabaseJs.includes('Aguardando Peças') &&
+  supabaseJs.includes('Aprovado e Execução') &&
+  (supabaseJs.includes('Pronto p/ retirada') || supabaseJs.includes('Finalizado')) &&
+  supabaseJs.includes('Entregue') &&
   supabaseJs.includes('triggerFinanceiroFromOS') &&
   !supabaseJs.includes('await db.ordem_servico.triggerFromOrcamento')
 );

@@ -279,10 +279,11 @@ export default function Dashboard() {
     }
   });
 
-  const ordensFinalizadasPeriodo = ordens.filter(os =>
-    normalizeKanbanStatus(os.status) === "finalizado" &&
-    (os.data_entrega_real || os.atualizado_em || "").startsWith(selectedPeriod)
-  );
+  const ordensFinalizadasPeriodo = ordens.filter(os => {
+    const s = normalizeKanbanStatus(os.status);
+    return (s === "finalizado" || s === "entregue") &&
+      (os.data_entrega_real || os.atualizado_em || "").startsWith(selectedPeriod);
+  });
   const idsFinalizadas = new Set(ordensFinalizadasPeriodo.map(os => os.id));
   osItens.forEach(item => {
     if (!idsFinalizadas.has(item.os_id)) return;
@@ -384,8 +385,9 @@ export default function Dashboard() {
   // Situação ATUAL da bancada (não depende do mês selecionado) usando os status do Kanban
   const hojeStr = localDateISO();
   const osAbertas = ordens.filter(os => {
+    if (os.arquivado) return false;
     const s = normalizeKanbanStatus(os.status);
-    return s !== "finalizado" && s !== "cancelado";
+    return s !== "finalizado" && s !== "entregue" && s !== "cancelado";
   });
   const contarStatus = (st) => osAbertas.filter(os => normalizeKanbanStatus(os.status) === st).length;
 
@@ -394,9 +396,13 @@ export default function Dashboard() {
   const osOrcamentoEnviado = contarStatus("orcamento_enviado");
   const osAguardandoPeca = contarStatus("aguardando_peca");
   const osEmExecucao = contarStatus("aprovado_execucao");
+  const osProntoRetirada = ordens.filter(os => !os.arquivado && normalizeKanbanStatus(os.status) === "finalizado").length;
   const osAtrasadas = osAbertas.filter(os => os.data_entrega_prevista && os.data_entrega_prevista < hojeStr).length;
   const totalOSAndamento = osAbertas.length;
-  const osFinalizadasMes = ordensFinalizadasPeriodo.length;
+  const osEntreguesMes = ordens.filter(os =>
+    normalizeKanbanStatus(os.status) === "entregue" &&
+    (os.data_entrega_real || os.atualizado_em || "").startsWith(selectedPeriod)
+  ).length;
 
   const osTiles = [
     { label: "Recebidos", value: osRecebido, color: "text-sky-400" },
@@ -404,7 +410,8 @@ export default function Dashboard() {
     { label: "Orç. enviado", value: osOrcamentoEnviado, color: "text-indigo-400" },
     { label: "Aguard. peça", value: osAguardandoPeca, color: "text-amber-500" },
     { label: "Execução", value: osEmExecucao, color: "text-[#19DDFF]" },
-    { label: "Finalizadas no mês", value: osFinalizadasMes, color: "text-emerald-400" },
+    { label: "Pronto p/ retirada", value: osProntoRetirada, color: "text-emerald-400" },
+    { label: "Entregues (mês)", value: osEntreguesMes, color: "text-green-400" },
   ];
 
   const handleWhatsAppAlert = (orc) => {
@@ -563,7 +570,7 @@ export default function Dashboard() {
             <span className="text-slate-500 text-xs font-medium">Situação atual da bancada</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-3">
             {osTiles.map((t) => (
               <button
                 key={t.label}
