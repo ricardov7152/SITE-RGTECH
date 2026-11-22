@@ -741,6 +741,23 @@ export const db = {
     }
   },
 
+  // ── Histórico de Etapas da OS (SLA por etapa) ──
+  os_historico: {
+    list: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('os_historico')
+          .select('*')
+          .order('alterado_em', { ascending: true });
+        if (error) return { data: [], error };
+        return { data: data || [], error: null };
+      } catch (err) {
+        console.error("Erro ao carregar histórico de etapas:", err);
+        return { data: [], error: err };
+      }
+    }
+  },
+
   // ── Configurações Gerais (Metas + Colunas do Kanban) ──
   configuracoes: {
     get: async () => {

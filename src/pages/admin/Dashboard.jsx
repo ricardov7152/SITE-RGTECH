@@ -2,6 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { db, normalizeKanbanStatus } from "../../services/supabase";
 import { localDateISO } from "../../utils/date";
+import {
+  formatDurationDays,
+  computeFairComparison,
+  computeAccountsReceivable,
+  computeStageSLA,
+  computeLeadTime,
+  computeMaintenanceFunnel,
+  computeEquipmentMix,
+  computeCriticalStock,
+} from "../../utils/dashboardAnalytics";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -19,9 +29,10 @@ import {
   Check,
   MessageSquare,
   Clock,
-  CheckCircle2,
-  XCircle,
-  FileText
+  Timer,
+  Laptop,
+  Package,
+  ArrowUpRight,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -33,6 +44,8 @@ export default function Dashboard() {
   const [itensDeOrcamento, setItensDeOrcamento] = useState([]);
   const [ordens, setOrdens] = useState([]);
   const [osItens, setOsItens] = useState([]);
+  const [produtos, setProdutos] = useState([]);
+  const [osHistorico, setOsHistorico] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Seletor de Período
@@ -102,13 +115,23 @@ export default function Dashboard() {
         const { data: itemsData } = await db.orcamento_itens.list();
         const { data: ordensData } = await db.ordem_servico.list();
         let osItensData = [];
+        let prodData = [];
+        let histData = [];
         try {
-          const res = await db.os_itens.listAll();
-          osItensData = res?.data || [];
+          const [resItens, resProd, resHist] = await Promise.all([
+            db.os_itens.listAll(),
+            db.produtos.list(),
+            db.os_historico.list(),
+          ]);
+          osItensData = resItens?.data || [];
+          prodData = resProd?.data || [];
+          histData = resHist?.data || [];
         } catch (e) {
-          console.error("Erro ao carregar itens das manutenções:", e);
+          console.error("Erro ao carregar dados complementares do painel:", e);
         }
         setOsItens(osItensData);
+        setProdutos(prodData);
+        setOsHistorico(histData);
         
         setFinanceiro(finData || []);
         setOrcamentos(orcData || []);
@@ -207,6 +230,9 @@ export default function Dashboard() {
   const despesasPagas = financeiro
     .filter(f => f.tipo === "Despesa" && f.status === "Pago" && (f.data_pagamento || f.data_vencimento)?.startsWith(selectedPeriod))
     .reduce((acc, curr) => acc + Number(curr.valor), 0);
+
+  const lucroLiquido = receitasRecebidas - despesasPagas;
+  const margemLucro = receitasRecebidas > 0 ? Math.round((lucroLiquido / receitasRecebidas) * 100) : 0;
 
   // --- TICKET MÉDIO NO PERÍODO ---
   // Agrupa parcelas do mesmo atendimento (OS ou orçamento) para não distorcer a média
@@ -324,22 +350,30 @@ export default function Dashboard() {
 
   const maxReceitaMes = Math.max(...chartDataReceitas.map(d => d.valor), 1);
 
-  // --- CRESCIMENTO MENSAL (%) COMPARADO AO MÊS ANTERIOR DO PERÍODO SELECIONADO ---
+  // --- CRESCIMENTO MENSAL (%) — COMPARATIVO JUSTO (MTD NO MÊS ATUAL) ---
   const [selAno, selMes] = selectedPeriod.split("-").map(Number);
   const prevMonthIdx = selMes === 1 ? 12 : selMes - 1;
   const prevYear = selMes === 1 ? selAno - 1 : selAno;
   const prevPeriodKey = `${prevYear}-${String(prevMonthIdx).padStart(2, "0")}`;
 
-  const faturamentoPeriodoAnterior = financeiro
-    .filter(f => f.tipo === "Receita" && f.status === "Pago" && (f.data_pagamento || f.data_vencimento)?.startsWith(prevPeriodKey))
-    .reduce((acc, curr) => acc + Number(curr.valor), 0);
+  const {
+    temComparativo,
+    crescimentoPercentual,
+    labelComparativo,
+  } = computeFairComparison({
+    financeiro,
+    selectedPeriod,
+    prevPeriodKey,
+    receitasRecebidas,
+  });
 
-  let crescimentoPercentual = 0;
-  let temComparativo = false;
-  if (faturamentoPeriodoAnterior > 0) {
-    crescimentoPercentual = ((receitasRecebidas - faturamentoPeriodoAnterior) / faturamentoPeriodoAnterior) * 100;
-    temComparativo = true;
-  }
+  // --- ANÁLISES DA FASE 3 (SLA, LEAD TIME, FUNIL OS, CONTAS A RECEBER, EQUIPAMENTOS, ESTOQUE) ---
+  const receivables = computeAccountsReceivable(financeiro, clientes);
+  const stageSLA = computeStageSLA(ordens, osHistorico);
+  const leadTime = computeLeadTime(ordens, selectedPeriod);
+  const maintFunnel = computeMaintenanceFunnel(ordens, selectedPeriod);
+  const eqpMix = computeEquipmentMix(ordens, osItens);
+  const criticalStock = computeCriticalStock(produtos);
 
   // --- RANKING DE CLIENTES NO PERÍODO ---
   const clientRevenue = {};
@@ -453,19 +487,49 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── KPIs Cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* ── KPIs Cards (5 Indicadores Financeiros do Período) ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
         {/* Faturamento Pago / Realizado */}
         <div className="glass p-6 rounded-2xl shadow-xl flex items-center justify-between relative overflow-hidden group">
           <div className="space-y-1">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Faturamento Realizado</span>
             <span className="text-2xl font-bold text-white block">R$ {receitasRecebidas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
-            <span className="text-xs text-slate-500 block">Lançamentos compensados</span>
+            <span className="text-xs text-slate-500 block">
+              Previsto no mês: R$ {receitaTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            </span>
           </div>
-          <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center shrink-0">
-            <DollarSign size={24} />
+          <div className="w-11 h-11 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center shrink-0">
+            <DollarSign size={22} />
           </div>
           <div className="absolute bottom-0 left-0 w-full h-1 bg-emerald-500/30"></div>
+        </div>
+
+        {/* Lucro Líquido & Margem do Mês */}
+        <div className="glass p-6 rounded-2xl shadow-xl flex items-center justify-between relative overflow-hidden">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Lucro Líquido</span>
+              <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                lucroLiquido >= 0 ? "bg-emerald-500/15 text-emerald-400" : "bg-rose-500/15 text-rose-400"
+              }`}>
+                {margemLucro}% margem
+              </span>
+            </div>
+            <span className={`text-2xl font-bold block ${lucroLiquido >= 0 ? "text-emerald-400" : "text-rose-500"}`}>
+              R$ {lucroLiquido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            </span>
+            <span className="text-xs text-slate-500 block">
+              Despesas pagas: R$ {despesasPagas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
+            lucroLiquido >= 0 ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
+          }`}>
+            {lucroLiquido >= 0 ? <TrendingUp size={22} /> : <TrendingDown size={22} />}
+          </div>
+          <div className={`absolute bottom-0 left-0 w-full h-1 ${
+            lucroLiquido >= 0 ? "bg-emerald-500/40" : "bg-rose-500/40"
+          }`}></div>
         </div>
 
         {/* Meta de Faturamento do Mês */}
@@ -523,13 +587,13 @@ export default function Dashboard() {
             <span className="text-2xl font-bold text-sky-400 block">R$ {ticketMedio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
             <span className="text-xs text-slate-500 block">Média por atendimento pago</span>
           </div>
-          <div className="w-12 h-12 bg-sky-500/10 text-sky-400 rounded-xl flex items-center justify-center shrink-0">
-            <AlertCircle size={24} />
+          <div className="w-11 h-11 bg-sky-500/10 text-sky-400 rounded-xl flex items-center justify-center shrink-0">
+            <AlertCircle size={22} />
           </div>
           <div className="absolute bottom-0 left-0 w-full h-1 bg-sky-500/30"></div>
         </div>
 
-        {/* Crescimento Mensal (%) */}
+        {/* Crescimento Mensal (%) — Comparativo Justo */}
         <div className="glass p-6 rounded-2xl shadow-xl flex items-center justify-between relative overflow-hidden">
           <div className="space-y-1">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Crescimento Mensal</span>
@@ -538,7 +602,7 @@ export default function Dashboard() {
                 <span className={`text-2xl font-bold block ${crescimentoPercentual >= 0 ? "text-emerald-400" : "text-rose-500"}`}>
                   {crescimentoPercentual >= 0 ? "+" : ""}{crescimentoPercentual.toFixed(1)}%
                 </span>
-                <span className="text-xs text-slate-500 block">Este mês vs. mês anterior</span>
+                <span className="text-xs text-slate-500 block">{labelComparativo}</span>
               </>
             ) : (
               <>
@@ -547,10 +611,10 @@ export default function Dashboard() {
               </>
             )}
           </div>
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
             !temComparativo ? "bg-slate-500/10 text-slate-400" : (crescimentoPercentual >= 0 ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400")
           }`}>
-            <Percent size={22} />
+            <Percent size={20} />
           </div>
           <div className={`absolute bottom-0 left-0 w-full h-1 ${
             !temComparativo ? "bg-slate-500/30" : (crescimentoPercentual >= 0 ? "bg-emerald-500/30" : "bg-rose-500/30")
@@ -607,6 +671,295 @@ export default function Dashboard() {
             <Clock size={24} />
           </div>
           <div className={`absolute bottom-0 left-0 w-full h-1 ${osAtrasadas > 0 ? "bg-rose-500/40" : "bg-white/5"}`}></div>
+        </div>
+      </div>
+
+      {/* ── Fase 3: SLA por Etapa, Funil & Mix de Equipamentos, Contas a Receber & Estoque Crítico ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 1. Tempo Médio por Etapa (SLA) & Lead Time Total */}
+        <div className="glass p-6 rounded-2xl shadow-xl space-y-5 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+              <div>
+                <h3 className="font-bold text-white text-base">SLA & Tempo por Etapa</h3>
+                <p className="text-slate-500 text-xs">Tempo médio de permanência em cada coluna</p>
+              </div>
+              <Timer size={18} className="text-[#19DDFF]" />
+            </div>
+
+            {/* Resumo Lead Time Total + Prazo */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/2 p-3 rounded-xl border border-white/5">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                  Lead Time Total
+                </span>
+                <span className="text-lg font-extrabold text-white block mt-0.5">
+                  {leadTime.avgDays !== null ? formatDurationDays(leadTime.avgDays) : "—"}
+                </span>
+                <span className="text-[10px] text-slate-500 block">
+                  {leadTime.completedCount > 0
+                    ? `Média de ${leadTime.completedCount} concluída(s)`
+                    : "Entrada até conclusão"}
+                </span>
+              </div>
+              <div className="bg-white/2 p-3 rounded-xl border border-white/5">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                  Entregas no Prazo
+                </span>
+                <span className="text-lg font-extrabold text-emerald-400 block mt-0.5">
+                  {leadTime.onTimeRate !== null ? `${leadTime.onTimeRate}%` : "100%"}
+                </span>
+                <span className="text-[10px] text-slate-500 block">Dentro da previsão</span>
+              </div>
+            </div>
+
+            {/* Barras de SLA por Etapa */}
+            <div className="space-y-2.5 pt-1">
+              {stageSLA.stages.map((st) => {
+                const widthPct =
+                  st.avgDays !== null
+                    ? Math.max(8, Math.round((st.avgDays / stageSLA.maxAvg) * 100))
+                    : 0;
+                const isBottleneck =
+                  stageSLA.bottleneck &&
+                  stageSLA.bottleneck.id === st.id &&
+                  (st.avgDays || 0) >= 1;
+
+                return (
+                  <div key={st.id} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-300 font-semibold flex items-center gap-1.5">
+                        {st.label}
+                        {isBottleneck && (
+                          <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                            Gargalo
+                          </span>
+                        )}
+                      </span>
+                      <span className="font-bold text-white">{st.formatted}</span>
+                    </div>
+                    <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className={`${isBottleneck ? "bg-amber-400" : st.color} h-full rounded-full transition-all`}
+                        style={{ width: `${widthPct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="border-t border-white/5 pt-3 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Calculado via histórico de movimentações</span>
+            <button
+              type="button"
+              onClick={() => navigate("/admin/ordens-servico")}
+              className="text-[#19DDFF] font-bold hover:underline flex items-center gap-1"
+            >
+              Ver Kanban <ArrowUpRight size={12} />
+            </button>
+          </div>
+        </div>
+
+        {/* 2. Funil de Manutenção (OS) & Receita por Tipo de Equipamento */}
+        <div className="glass p-6 rounded-2xl shadow-xl space-y-5 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+              <div>
+                <h3 className="font-bold text-white text-base">Funil de Manutenção & Mix</h3>
+                <p className="text-slate-500 text-xs">Conversão da bancada e perfil de equipamentos</p>
+              </div>
+              <Laptop size={18} className="text-[#19DDFF]" />
+            </div>
+
+            {/* Funil de OS */}
+            <div className="space-y-2">
+              {maintFunnel.steps.map((step) => {
+                const pct =
+                  maintFunnel.totalEntrada > 0
+                    ? Math.round((step.count / maintFunnel.totalEntrada) * 100)
+                    : 0;
+                return (
+                  <div key={step.label} className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-300 font-semibold">{step.label}</span>
+                      <span className="font-bold text-white">
+                        {step.count} ({pct}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                      <div
+                        className={`${step.color} h-full rounded-full transition-all`}
+                        style={{ width: `${Math.max(4, pct)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="flex items-center justify-between pt-1 text-[11px] text-slate-400 font-semibold">
+                <span>Aprovação de reparo: <strong className="text-emerald-400">{maintFunnel.taxaAprovacaoOS}%</strong></span>
+                <span>Taxa de conclusão: <strong className="text-[#19DDFF]">{maintFunnel.taxaConclusaoOS}%</strong></span>
+              </div>
+            </div>
+
+            {/* Receita por Tipo de Equipamento */}
+            <div className="border-t border-white/5 pt-3 space-y-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                Demanda e Receita por Equipamento
+              </span>
+              {eqpMix.typesList.length === 0 ? (
+                <p className="text-xs text-slate-500 py-2">Sem equipamentos registrados.</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {eqpMix.typesList.slice(0, 4).map((item) => (
+                    <div
+                      key={item.name}
+                      className="flex items-center justify-between text-xs bg-white/2 px-3 py-2 rounded-xl border border-white/5"
+                    >
+                      <div>
+                        <span className="font-bold text-white">{item.name}</span>
+                        <span className="text-[10px] text-slate-500 ml-2">{item.count} OS</span>
+                      </div>
+                      <span className="font-bold text-emerald-400">
+                        R$ {item.revenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {eqpMix.topBrands.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase mr-1">Top Marcas:</span>
+                  {eqpMix.topBrands.map((b) => (
+                    <span
+                      key={b.brand}
+                      className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white/5 text-slate-300 border border-white/5"
+                    >
+                      {b.brand} ({b.count})
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Contas a Receber (7 / 30 dias) & Estoque Crítico */}
+        <div className="glass p-6 rounded-2xl shadow-xl space-y-5 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+              <div>
+                <h3 className="font-bold text-white text-base">A Receber & Estoque Crítico</h3>
+                <p className="text-slate-500 text-xs">Previsão de caixa e alerta de reposição</p>
+              </div>
+              <DollarSign size={18} className="text-emerald-400" />
+            </div>
+
+            {/* Resumo Contas a Receber */}
+            <div className="grid grid-cols-3 gap-2.5">
+              <div
+                onClick={() => navigate("/admin/financeiro")}
+                className="bg-white/2 p-3 rounded-xl border border-white/5 cursor-pointer hover:border-amber-500/30 transition-all"
+              >
+                <span className="text-[9px] font-bold text-amber-400 uppercase block">
+                  Hoje / Vencidas
+                </span>
+                <span className="text-sm font-extrabold text-white block mt-1">
+                  R$ {receivables.vencidasOuHoje.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                </span>
+                <span className="text-[9px] text-slate-500 block">A conferir</span>
+              </div>
+
+              <div
+                onClick={() => navigate("/admin/financeiro")}
+                className="bg-white/2 p-3 rounded-xl border border-white/5 cursor-pointer hover:border-[#19DDFF]/30 transition-all"
+              >
+                <span className="text-[9px] font-bold text-sky-400 uppercase block">
+                  Próx. 7 dias
+                </span>
+                <span className="text-sm font-extrabold text-white block mt-1">
+                  R$ {receivables.proximos7Dias.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                </span>
+                <span className="text-[9px] text-slate-500 block">Curto prazo</span>
+              </div>
+
+              <div
+                onClick={() => navigate("/admin/financeiro")}
+                className="bg-white/2 p-3 rounded-xl border border-white/5 cursor-pointer hover:border-emerald-500/30 transition-all"
+              >
+                <span className="text-[9px] font-bold text-emerald-400 uppercase block">
+                  Próx. 30 dias
+                </span>
+                <span className="text-sm font-extrabold text-white block mt-1">
+                  R$ {receivables.proximos30Dias.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                </span>
+                <span className="text-[9px] text-slate-500 block">Médio prazo</span>
+              </div>
+            </div>
+
+            {/* Estoque Crítico */}
+            <div className="border-t border-white/5 pt-3 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <Package size={13} className="text-amber-400" />
+                  Estoque Crítico de Peças ({criticalStock.length})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => navigate("/admin/produtos")}
+                  className="text-[11px] font-bold text-[#19DDFF] hover:underline"
+                >
+                  Gerenciar
+                </button>
+              </div>
+
+              {criticalStock.length === 0 ? (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-300 font-semibold text-center">
+                  Todas as peças cadastradas estão com estoque acima do mínimo.
+                </div>
+              ) : (
+                <div className="space-y-1.5 max-h-[155px] overflow-y-auto pr-1">
+                  {criticalStock.map((prod) => {
+                    const qtd = Number(prod.estoque_atual ?? 0);
+                    const zerado = qtd <= 0;
+                    return (
+                      <div
+                        key={prod.id}
+                        onClick={() => navigate("/admin/produtos")}
+                        className="flex items-center justify-between text-xs bg-white/2 hover:bg-white/5 px-3 py-2 rounded-xl border border-white/5 cursor-pointer transition-all"
+                      >
+                        <span className="font-semibold text-white truncate max-w-[180px]">
+                          {prod.nome}
+                        </span>
+                        <span
+                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                            zerado
+                              ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                              : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                          }`}
+                        >
+                          {zerado ? "Sem estoque (0)" : `Restam ${qtd} un.`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="border-t border-white/5 pt-3 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Total pendente: R$ {receivables.totalGeral.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+            <button
+              type="button"
+              onClick={() => navigate("/admin/financeiro")}
+              className="text-[#19DDFF] font-bold hover:underline flex items-center gap-1"
+            >
+              Abrir Financeiro <ArrowUpRight size={12} />
+            </button>
+          </div>
         </div>
       </div>
 
