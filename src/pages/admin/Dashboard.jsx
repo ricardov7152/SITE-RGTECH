@@ -62,6 +62,14 @@ export default function Dashboard() {
   });
   const [isEditingMeta, setIsEditingMeta] = useState(false);
   const [tempMeta, setTempMeta] = useState(5000);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => {
+      setToast((prev) => (prev?.message === message ? null : prev));
+    }, 3600);
+  };
 
   const metaFaturamento = configs.metas[selectedPeriod] || 5000;
 
@@ -187,7 +195,7 @@ export default function Dashboard() {
   const handleSaveMeta = async () => {
     const value = Number(tempMeta);
     if (isNaN(value) || value <= 0) {
-      alert("Por favor, insira um valor válido para a meta.");
+      showToast("warning", "Por favor, insira um valor válido para a meta.");
       return;
     }
     const newConfigs = {
@@ -201,17 +209,60 @@ export default function Dashboard() {
       setConfigs(newConfigs);
       await db.configuracoes.upsert(newConfigs);
       setIsEditingMeta(false);
+      showToast("success", "Meta mensal atualizada com sucesso!");
     } catch (e) {
       console.error("Erro ao salvar meta no banco:", e);
-      alert("Erro ao salvar meta no banco de dados.");
+      showToast("error", "Erro ao salvar meta no banco de dados.");
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-[60vh] text-slate-400">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-        <span className="ml-3">Carregando dados do painel...</span>
+      <div className="space-y-7 animate-pulse">
+        {/* Skeleton Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-2">
+            <div className="h-8 w-56 bg-white/10 rounded-xl" />
+            <div className="h-4 w-80 bg-white/5 rounded-lg" />
+          </div>
+          <div className="h-10 w-48 bg-white/10 rounded-xl" />
+        </div>
+
+        {/* Skeleton Faixa 1: Operação Hoje */}
+        <div className="glass p-6 rounded-2xl space-y-4">
+          <div className="h-5 w-44 bg-white/10 rounded-lg" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="h-24 bg-white/5 rounded-2xl border border-white/5" />
+            ))}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-3">
+            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+              <div key={n} className="h-16 bg-white/5 rounded-xl border border-white/5" />
+            ))}
+          </div>
+        </div>
+
+        {/* Skeleton Faixa 2: KPIs do Mês */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <div key={n} className="glass p-6 rounded-2xl h-32 space-y-3">
+              <div className="h-3 w-24 bg-white/10 rounded" />
+              <div className="h-7 w-32 bg-white/10 rounded-lg" />
+              <div className="h-3 w-28 bg-white/5 rounded" />
+            </div>
+          ))}
+        </div>
+
+        {/* Skeleton Painéis Analíticos */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="glass p-6 rounded-2xl h-72 space-y-4">
+              <div className="h-5 w-40 bg-white/10 rounded-lg" />
+              <div className="h-48 w-full bg-white/5 rounded-xl" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -317,38 +368,56 @@ export default function Dashboard() {
     registrarItem(item.nome, item.tipo, valor, item.quantidade);
   });
 
-  // --- GRÁFICO DE RECEITAS POR MÊS (ANUAL) ---
+  // --- GRÁFICO DE RECEITAS E DESPESAS POR MÊS (ANUAL) ---
   const receitasPorMes = {};
+  const despesasPorMes = {};
   const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
   const anoFoco = Number(selectedPeriod.substring(0, 4));
 
   mesesNomes.forEach((_, idx) => {
     const mesStr = String(idx + 1).padStart(2, "0");
     receitasPorMes[`${anoFoco}-${mesStr}`] = 0;
+    despesasPorMes[`${anoFoco}-${mesStr}`] = 0;
   });
 
   financeiro
-    .filter(f => f.tipo === "Receita" && f.status === "Pago" && (f.data_pagamento || f.data_vencimento))
+    .filter(f => f.status === "Pago" && (f.data_pagamento || f.data_vencimento))
     .forEach(f => {
       const data = f.data_pagamento || f.data_vencimento;
       const anoMes = data.substring(0, 7);
-      if (receitasPorMes[anoMes] !== undefined) {
+      if (f.tipo === "Receita" && receitasPorMes[anoMes] !== undefined) {
         receitasPorMes[anoMes] += Number(f.valor);
+      } else if (f.tipo === "Despesa" && despesasPorMes[anoMes] !== undefined) {
+        despesasPorMes[anoMes] += Number(f.valor);
       }
     });
 
   const chartDataReceitas = Object.entries(receitasPorMes)
     .map(([anoMes, valor]) => {
       const mesIdx = Number(anoMes.substring(5, 7)) - 1;
+      const despesa = despesasPorMes[anoMes] || 0;
       return {
         label: mesesNomes[mesIdx],
         mesAno: anoMes,
-        valor
+        valor,
+        despesa,
+        lucro: valor - despesa,
       };
     })
     .sort((a, b) => a.mesAno.localeCompare(b.mesAno));
 
-  const maxReceitaMes = Math.max(...chartDataReceitas.map(d => d.valor), 1);
+  const maxReceitaMes = Math.max(
+    ...chartDataReceitas.map(d => Math.max(d.valor, d.despesa)),
+    1
+  );
+
+  const formatCompactBRL = (val) => {
+    if (!val || val <= 0) return "";
+    if (val >= 1000) {
+      return `${(val / 1000).toFixed(1).replace(".0", "").replace(".", ",")}k`;
+    }
+    return `${Math.round(val)}`;
+  };
 
   // --- CRESCIMENTO MENSAL (%) — COMPARATIVO JUSTO (MTD NO MÊS ATUAL) ---
   const [selAno, selMes] = selectedPeriod.split("-").map(Number);
@@ -451,7 +520,7 @@ export default function Dashboard() {
   const handleWhatsAppAlert = (orc) => {
     const client = clientes.find(c => c.id === orc.cliente_id);
     if (!client || !client.telefone) {
-      alert("Cliente sem telefone cadastrado!");
+      showToast("warning", "Este cliente não possui telefone cadastrado.");
       return;
     }
     const cleanPhone = client.telefone.replace(/\D/g, "");
@@ -461,18 +530,23 @@ export default function Dashboard() {
     window.open(`https://api.whatsapp.com/send?phone=55${cleanPhone}&text=${encodeURIComponent(msg)}`, "_blank");
   };
 
+  const convRadius = 48;
+  const convCircumference = 2 * Math.PI * convRadius;
+  const convClamped = Math.min(100, Math.max(0, taxaConversao));
+  const convOffset = convCircumference * (1 - convClamped / 100);
+
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-white">Dashboard Geral</h1>
-          <p className="text-slate-400 text-sm mt-1">Resumo operacional, financeiro e CRM da RG TECH Computadores</p>
+          <p className="text-slate-400 text-sm mt-1">Resumo operacional em tempo real, financeiro e CRM da RG TECH Computadores</p>
         </div>
         
         {/* Seletor de Período */}
         <div className="flex items-center gap-2">
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Período:</label>
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Período do Mês:</label>
           <select
             className="bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-[#19DDFF] transition-all cursor-pointer shadow-lg"
             value={selectedPeriod}
@@ -487,10 +561,147 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── KPIs Cards (5 Indicadores Financeiros do Período) ── */}
+      {/* ── FAIXA 1: OPERAÇÃO HOJE (BANCADA EM TEMPO REAL) ── */}
+      <div className="glass p-6 rounded-2xl shadow-xl space-y-5 border border-[#19DDFF]/15">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <h2 className="font-extrabold text-white text-base tracking-tight uppercase">
+              Operação Hoje — Bancada em Tempo Real
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/admin/ordens-servico")}
+            className="text-xs font-bold text-[#19DDFF] hover:underline flex items-center gap-1"
+          >
+            Abrir Quadro Kanban <ArrowUpRight size={14} />
+          </button>
+        </div>
+
+        {/* 4 Destaques Imediatos do Dia */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <button
+            type="button"
+            onClick={() => navigate("/admin/ordens-servico")}
+            className="bg-white/2 hover:bg-white/5 p-4 rounded-2xl border border-white/5 hover:border-[#19DDFF]/35 text-left flex items-center justify-between transition-all"
+          >
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Na Bancada Agora
+              </span>
+              <span className="text-2xl font-extrabold text-white block mt-0.5">
+                {totalOSAndamento}
+              </span>
+              <span className="text-[11px] text-slate-500 block">Equipamentos em atendimento</span>
+            </div>
+            <div className="w-11 h-11 rounded-xl bg-[#0029F5]/20 text-[#19DDFF] flex items-center justify-center shrink-0">
+              <Wrench size={20} />
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate("/admin/ordens-servico")}
+            className="bg-white/2 hover:bg-white/5 p-4 rounded-2xl border border-white/5 hover:border-emerald-500/35 text-left flex items-center justify-between transition-all"
+          >
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Prontos p/ Retirada
+              </span>
+              <span className="text-2xl font-extrabold text-emerald-400 block mt-0.5">
+                {osProntoRetirada}
+              </span>
+              <span className="text-[11px] text-slate-500 block">Aguardando cliente retirar</span>
+            </div>
+            <div className="w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+              <PackageCheck size={20} />
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate("/admin/ordens-servico?atrasadas=1")}
+            className={`bg-white/2 hover:bg-white/5 p-4 rounded-2xl border text-left flex items-center justify-between transition-all ${
+              osAtrasadas > 0
+                ? "border-rose-500/35 hover:border-rose-500/60"
+                : "border-white/5 hover:border-white/15"
+            }`}
+          >
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                OS Atrasadas
+              </span>
+              <span
+                className={`text-2xl font-extrabold block mt-0.5 ${
+                  osAtrasadas > 0 ? "text-rose-500 animate-pulse" : "text-slate-300"
+                }`}
+              >
+                {osAtrasadas}
+              </span>
+              <span className="text-[11px] text-slate-500 block">
+                {osAtrasadas > 0 ? "Clique para priorizar" : "Tudo dentro do prazo"}
+              </span>
+            </div>
+            <div
+              className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
+                osAtrasadas > 0
+                  ? "bg-rose-500/15 text-rose-400 border border-rose-500/30"
+                  : "bg-slate-500/10 text-slate-500"
+              }`}
+            >
+              <Clock size={20} />
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate("/admin/financeiro")}
+            className="bg-white/2 hover:bg-white/5 p-4 rounded-2xl border border-white/5 hover:border-amber-500/35 text-left flex items-center justify-between transition-all"
+          >
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                A Receber / Conferir Hoje
+              </span>
+              <span className="text-2xl font-extrabold text-amber-400 block mt-0.5">
+                R$ {receivables.vencidasOuHoje.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </span>
+              <span className="text-[11px] text-slate-500 block">
+                { alertasOrcamentos.length > 0
+                  ? `${alertasOrcamentos.length} orçamento(s) p/ follow-up`
+                  : "Lançamentos pendentes até hoje" }
+              </span>
+            </div>
+            <div className="w-11 h-11 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0">
+              <DollarSign size={20} />
+            </div>
+          </button>
+        </div>
+
+        {/* 7 Raias da Bancada */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-3">
+          {osTiles.map((t) => (
+            <button
+              key={t.label}
+              type="button"
+              onClick={() => navigate("/admin/ordens-servico")}
+              className="bg-white/2 p-3 rounded-xl border border-white/5 text-center space-y-1 hover:bg-white/5 hover:border-[#19DDFF]/30 transition-all"
+              title="Abrir quadro de Manutenção"
+            >
+              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">{t.label}</span>
+              <span className={`text-xl font-bold block ${t.color}`}>{t.value}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── FAIXA 2: RESULTADOS DO MÊS SELECIONADO (5 KPIs Financeiros) ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
         {/* Faturamento Pago / Realizado */}
-        <div className="glass p-6 rounded-2xl shadow-xl flex items-center justify-between relative overflow-hidden group">
+        <div
+          onClick={() => navigate("/admin/financeiro")}
+          className="glass p-6 rounded-2xl shadow-xl flex items-center justify-between relative overflow-hidden group cursor-pointer hover:border-emerald-500/30 transition-all"
+        >
           <div className="space-y-1">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Faturamento Realizado</span>
             <span className="text-2xl font-bold text-white block">R$ {receitasRecebidas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
@@ -505,7 +716,10 @@ export default function Dashboard() {
         </div>
 
         {/* Lucro Líquido & Margem do Mês */}
-        <div className="glass p-6 rounded-2xl shadow-xl flex items-center justify-between relative overflow-hidden">
+        <div
+          onClick={() => navigate("/admin/financeiro")}
+          className="glass p-6 rounded-2xl shadow-xl flex items-center justify-between relative overflow-hidden cursor-pointer hover:border-[#19DDFF]/30 transition-all"
+        >
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Lucro Líquido</span>
@@ -619,58 +833,6 @@ export default function Dashboard() {
           <div className={`absolute bottom-0 left-0 w-full h-1 ${
             !temComparativo ? "bg-slate-500/30" : (crescimentoPercentual >= 0 ? "bg-emerald-500/30" : "bg-rose-500/30")
           }`}></div>
-        </div>
-      </div>
-
-      {/* ── Seção de Ordens de Serviço (OS) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Card: OS em Andamento */}
-        <div className="glass p-6 rounded-2xl shadow-xl lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between border-b border-white/5 pb-3">
-            <div className="flex items-center gap-2.5">
-              <Wrench className="text-[#19DDFF]" size={20} />
-              <h3 className="font-bold text-white text-base">OS em Andamento ({totalOSAndamento})</h3>
-            </div>
-            <span className="text-slate-500 text-xs font-medium">Situação atual da bancada</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-3">
-            {osTiles.map((t) => (
-              <button
-                key={t.label}
-                type="button"
-                onClick={() => navigate("/admin/ordens-servico")}
-                className="bg-white/2 p-3.5 rounded-xl border border-white/5 text-center space-y-1 hover:bg-white/5 hover:border-[#19DDFF]/30 transition-all"
-                title="Abrir quadro de Manutenção"
-              >
-                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">{t.label}</span>
-                <span className={`text-xl font-bold block ${t.color}`}>{t.value}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Card: OS Atrasadas */}
-        <div
-          onClick={() => navigate("/admin/ordens-servico?atrasadas=1")}
-          className="glass p-6 rounded-2xl shadow-xl flex items-center justify-between relative overflow-hidden cursor-pointer hover:border-rose-500/30 transition-all"
-          title="Ver manutenções atrasadas no quadro"
-        >
-          <div className="space-y-1">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">OS Atrasadas</span>
-            <span className={`text-3xl font-extrabold block ${osAtrasadas > 0 ? "text-rose-500 animate-pulse" : "text-slate-300"}`}>
-              {osAtrasadas}
-            </span>
-            <span className="text-xs text-slate-500 block">
-              {osAtrasadas > 0 ? "Requer atenção imediata" : "Nenhum atraso pendente"}
-            </span>
-          </div>
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
-            osAtrasadas > 0 ? "bg-rose-500/15 text-rose-400 border border-rose-500/30" : "bg-slate-500/10 text-slate-500 border border-slate-500/10"
-          }`}>
-            <Clock size={24} />
-          </div>
-          <div className={`absolute bottom-0 left-0 w-full h-1 ${osAtrasadas > 0 ? "bg-rose-500/40" : "bg-white/5"}`}></div>
         </div>
       </div>
 
@@ -965,34 +1127,88 @@ export default function Dashboard() {
 
       {/* ── Nova Linha: Gráfico de Receitas e Divisão Peças/Serviços ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Gráfico de Barras de Receitas por Mês */}
+        {/* Gráfico de Barras de Receitas vs Despesas por Mês */}
         <div className="glass p-6 rounded-2xl shadow-xl space-y-4 lg:col-span-2">
-          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-4">
             <div className="space-y-0.5">
-              <h3 className="font-bold text-white text-base">Faturamento Mensal ({anoFoco})</h3>
-              <p className="text-slate-500 text-xs">Receitas compensadas mês a mês</p>
+              <h3 className="font-bold text-white text-base">Faturamento & Despesas Mensais ({anoFoco})</h3>
+              <p className="text-slate-500 text-xs">Clique em qualquer mês para filtrar os indicadores do período</p>
             </div>
-            <Calendar size={18} className="text-slate-400" />
+            <div className="flex items-center gap-4 text-[11px] font-bold">
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <span className="w-2.5 h-2.5 rounded-sm bg-gradient-to-t from-[#0029F5] to-[#19DDFF]" />
+                Receitas
+              </span>
+              <span className="flex items-center gap-1.5 text-slate-400">
+                <span className="w-2.5 h-2.5 rounded-sm bg-rose-500/75" />
+                Despesas
+              </span>
+              <Calendar size={16} className="text-slate-400 ml-1" />
+            </div>
           </div>
 
-          <div className="h-64 flex items-end justify-between gap-3 pt-6 px-2">
+          <div className="h-64 flex items-end justify-between gap-2 sm:gap-3 pt-8 px-1">
             {chartDataReceitas.map((data, idx) => {
-              const heightPercent = Math.max(5, (data.valor / maxReceitaMes) * 100);
+              const recPct = data.valor > 0 ? Math.max(8, (data.valor / maxReceitaMes) * 100) : 4;
+              const despPct = data.despesa > 0 ? Math.max(6, (data.despesa / maxReceitaMes) * 100) : 0;
+              const isSelected = data.mesAno === selectedPeriod;
+              const compactVal = formatCompactBRL(data.valor);
+
               return (
-                <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group cursor-pointer relative">
-                  
-                  {/* Barra */}
-                  <div 
-                    className="w-full bg-[#0029F5]/50 hover:bg-[#19DDFF] transition-all rounded-t-lg relative border-t border-white/10 shadow-[0_0_10px_rgba(0,41,245,0.15)]"
-                    style={{ height: `${heightPercent}%` }}
+                <div
+                  key={idx}
+                  onClick={() => setSelectedPeriod(data.mesAno)}
+                  className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end group cursor-pointer relative"
+                >
+                  {/* Valor visível no topo da barra */}
+                  <span
+                    className={`text-[9px] font-extrabold tracking-tight transition-colors ${
+                      isSelected
+                        ? "text-[#19DDFF]"
+                        : data.valor > 0
+                        ? "text-slate-400 group-hover:text-white"
+                        : "text-transparent"
+                    }`}
                   >
-                    {/* Tooltip valor */}
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-950 border border-white/10 px-2.5 py-1.5 rounded-lg text-[10px] text-white font-bold whitespace-nowrap absolute bottom-full left-1/2 -translate-x-1/2 mb-2 shadow-2xl z-10 pointer-events-none">
-                      R$ {data.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                    </span>
+                    {compactVal || "0"}
+                  </span>
+
+                  {/* Par de Barras: Receita + Despesa */}
+                  <div className="w-full flex items-end justify-center gap-1 flex-1">
+                    <div
+                      className={`flex-1 rounded-t-lg transition-all relative border-t ${
+                        isSelected
+                          ? "bg-gradient-to-t from-[#0029F5] to-[#19DDFF] border-[#19DDFF] shadow-[0_0_18px_rgba(25,221,255,0.3)]"
+                          : "bg-[#0029F5]/55 group-hover:bg-[#19DDFF]/80 border-white/10"
+                      }`}
+                      style={{ height: `${recPct}%` }}
+                    />
+                    {despPct > 0 && (
+                      <div
+                        className="w-2 sm:w-2.5 bg-rose-500/75 group-hover:bg-rose-400 rounded-t-md transition-all"
+                        style={{ height: `${despPct}%` }}
+                      />
+                    )}
                   </div>
-                  {/* Label */}
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{data.label}</span>
+
+                  {/* Tooltip Completo */}
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-950 border border-white/15 px-3 py-2 rounded-xl text-[10px] text-white font-semibold whitespace-nowrap absolute bottom-full left-1/2 -translate-x-1/2 mb-1 shadow-2xl z-20 pointer-events-none space-y-0.5">
+                    <div className="font-extrabold text-[#19DDFF] uppercase">{data.label}/{anoFoco}</div>
+                    <div>Receita: <strong className="text-emerald-400">R$ {data.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</strong></div>
+                    <div>Despesa: <strong className="text-rose-400">R$ {data.despesa.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</strong></div>
+                    <div>Lucro: <strong>R$ {data.lucro.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</strong></div>
+                  </div>
+
+                  {/* Label do Mês */}
+                  <span
+                    className={`text-[10px] font-extrabold uppercase tracking-tight px-1.5 py-0.5 rounded-md transition-all ${
+                      isSelected
+                        ? "bg-[#0029F5] text-white shadow-sm"
+                        : "text-slate-500 group-hover:text-slate-300"
+                    }`}
+                  >
+                    {data.label}
+                  </span>
                 </div>
               );
             })}
@@ -1066,14 +1282,42 @@ export default function Dashboard() {
             <Percent size={18} className="text-slate-400" />
           </div>
 
-          <div className="flex flex-col items-center py-6">
-            <div className="relative flex items-center justify-center">
-              {/* Outer Ring */}
-              <div className="w-28 h-28 rounded-full border-8 border-white/5 flex items-center justify-center">
-                <span className="text-2xl font-bold text-white">{taxaConversao.toFixed(0)}%</span>
+          <div className="flex flex-col items-center py-5">
+            <div className="relative w-32 h-32 flex items-center justify-center">
+              <svg className="w-32 h-32 -rotate-90" viewBox="0 0 112 112">
+                <defs>
+                  <linearGradient id="rgConvGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#0029F5" />
+                    <stop offset="100%" stopColor="#19DDFF" />
+                  </linearGradient>
+                </defs>
+                <circle
+                  cx="56"
+                  cy="56"
+                  r={convRadius}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.06)"
+                  strokeWidth="10"
+                />
+                <circle
+                  cx="56"
+                  cy="56"
+                  r={convRadius}
+                  fill="none"
+                  stroke="url(#rgConvGrad)"
+                  strokeWidth="10"
+                  strokeLinecap="round"
+                  strokeDasharray={convCircumference}
+                  strokeDashoffset={convOffset}
+                  className="transition-all duration-700 ease-out"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-extrabold text-white">{taxaConversao.toFixed(0)}%</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Conversão</span>
               </div>
             </div>
-            <p className="text-xs text-slate-500 text-center mt-4 max-w-[200px]">
+            <p className="text-xs text-slate-500 text-center mt-3 max-w-[200px]">
               Proporção de orçamentos aprovados/concluídos sobre o total emitido
             </p>
           </div>
@@ -1271,7 +1515,16 @@ export default function Dashboard() {
         
         {/* Últimos Orçamentos */}
         <div className="glass p-6 rounded-2xl shadow-xl space-y-4">
-          <h3 className="font-bold text-white text-base border-b border-white/5 pb-4">Últimos Orçamentos</h3>
+          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+            <h3 className="font-bold text-white text-base">Últimos Orçamentos</h3>
+            <button
+              type="button"
+              onClick={() => navigate("/admin/orcamentos")}
+              className="text-xs font-bold text-[#19DDFF] hover:underline flex items-center gap-1"
+            >
+              Ver todos <ArrowUpRight size={13} />
+            </button>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-400">
               <thead>
@@ -1284,7 +1537,11 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {orcamentos.slice(0, 5).map(o => (
-                  <tr key={o.id} className="border-b border-white/5 hover:bg-white/2">
+                  <tr
+                    key={o.id}
+                    onClick={() => navigate("/admin/orcamentos")}
+                    className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
+                  >
                     <td className="py-3 font-semibold text-white">{o.id}</td>
                     <td>{o.cliente_nome}</td>
                     <td className="font-semibold text-white">R$ {Number(o.total).toFixed(2)}</td>
@@ -1305,7 +1562,16 @@ export default function Dashboard() {
 
         {/* Últimas Transações */}
         <div className="glass p-6 rounded-2xl shadow-xl space-y-4">
-          <h3 className="font-bold text-white text-base border-b border-white/5 pb-4">Atividade Financeira Recente</h3>
+          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+            <h3 className="font-bold text-white text-base">Atividade Financeira Recente</h3>
+            <button
+              type="button"
+              onClick={() => navigate("/admin/financeiro")}
+              className="text-xs font-bold text-[#19DDFF] hover:underline flex items-center gap-1"
+            >
+              Ver todos <ArrowUpRight size={13} />
+            </button>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-400">
               <thead>
@@ -1318,7 +1584,11 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {financeiro.slice(0, 5).map(f => (
-                  <tr key={f.id} className="border-b border-white/5 hover:bg-white/2">
+                  <tr
+                    key={f.id}
+                    onClick={() => navigate("/admin/financeiro")}
+                    className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
+                  >
                     <td className="py-3 font-semibold text-white max-w-[200px] truncate">{f.descricao}</td>
                     <td className={f.tipo === "Receita" ? "text-emerald-400 font-semibold" : "text-rose-500 font-semibold"}>
                       {f.tipo === "Receita" ? "+" : "-"} R$ {Number(f.valor).toFixed(2)}
@@ -1337,6 +1607,21 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* Toast de feedback do Dashboard */}
+      {toast && (
+        <div
+          className={`fixed bottom-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl border shadow-2xl backdrop-blur-xl text-xs font-bold animate-fadeIn ${
+            toast.type === "error"
+              ? "bg-rose-950/95 border-rose-400/40 text-rose-200"
+              : toast.type === "warning"
+              ? "bg-amber-950/95 border-amber-400/40 text-amber-200"
+              : "bg-emerald-950/95 border-emerald-400/40 text-emerald-200"
+          }`}
+        >
+          <span>{toast.message}</span>
+        </div>
+      )}
     </div>
   );
 }
